@@ -62,6 +62,7 @@ namespace CityEditor
                         cross.transform.localScale = new Vector3(4f, 1f, 4f);
                         CleanImportedObject(cross);
                         if (envMat != null) ApplyMaterialToRenderers(cross, envMat);
+                        AddBoxColliderToHierarchy(cross);
                     }
                 }
             }
@@ -84,6 +85,7 @@ namespace CityEditor
                         str.transform.localScale = new Vector3(4f, 1f, 4f);
                         CleanImportedObject(str);
                         if (envMat != null) ApplyMaterialToRenderers(str, envMat);
+                        AddBoxColliderToHierarchy(str);
                     }
                 }
             }
@@ -106,6 +108,7 @@ namespace CityEditor
                         str.transform.localScale = new Vector3(4f, 1f, 4f);
                         CleanImportedObject(str);
                         if (envMat != null) ApplyMaterialToRenderers(str, envMat);
+                        AddBoxColliderToHierarchy(str);
                     }
                 }
             }
@@ -754,42 +757,42 @@ namespace CityEditor
             GameObject pedWaypointsRoot = new GameObject("--- PEDESTRIAN WAYPOINTS (SIDEWALKS & CROSSWALKS) ---");
 
             Transform[] p1Waypoints = CreateLoopWaypoints("PedRoute_Sidewalk_Central", pedWaypointsRoot.transform, new Vector3[] {
-                new Vector3(-3.8f, 0.08f, -13.5f),
-                new Vector3(-3.8f, 0.08f, 13.5f),
-                new Vector3(-1.8f, 0.04f, 13.5f),
-                new Vector3(0.0f, 0.04f, 13.5f),
-                new Vector3(1.8f, 0.04f, 13.5f),
-                new Vector3(3.8f, 0.08f, 13.5f),
-                new Vector3(3.8f, 0.08f, -13.5f),
-                new Vector3(1.8f, 0.04f, -13.5f),
-                new Vector3(0.0f, 0.04f, -13.5f),
-                new Vector3(-1.8f, 0.04f, -13.5f)
+                new Vector3(-3.8f, 0.16f, -13.5f),
+                new Vector3(-3.8f, 0.16f, 13.5f),
+                new Vector3(-1.8f, 0.035f, 13.5f),
+                new Vector3(0.0f, 0.035f, 13.5f),
+                new Vector3(1.8f, 0.035f, 13.5f),
+                new Vector3(3.8f, 0.16f, 13.5f),
+                new Vector3(3.8f, 0.16f, -13.5f),
+                new Vector3(1.8f, 0.035f, -13.5f),
+                new Vector3(0.0f, 0.035f, -13.5f),
+                new Vector3(-1.8f, 0.035f, -13.5f)
             });
 
             Transform[] p2Waypoints = CreateLoopWaypoints("PedRoute_Sidewalk_WestAvenue", pedWaypointsRoot.transform, new Vector3[] {
-                new Vector3(-18.2f, 0.08f, -13.5f),
-                new Vector3(-18.2f, 0.08f, 13.5f),
-                new Vector3(-20.1f, 0.04f, 13.5f),
-                new Vector3(-22.0f, 0.04f, 13.5f),
-                new Vector3(-23.9f, 0.04f, 13.5f),
-                new Vector3(-25.8f, 0.08f, 13.5f),
-                new Vector3(-25.8f, 0.08f, -13.5f),
-                new Vector3(-23.9f, 0.04f, -13.5f),
-                new Vector3(-22.0f, 0.04f, -13.5f),
-                new Vector3(-20.1f, 0.04f, -13.5f)
+                new Vector3(-18.2f, 0.16f, -13.5f),
+                new Vector3(-18.2f, 0.16f, 13.5f),
+                new Vector3(-20.1f, 0.035f, 13.5f),
+                new Vector3(-22.0f, 0.035f, 13.5f),
+                new Vector3(-23.9f, 0.035f, 13.5f),
+                new Vector3(-25.8f, 0.16f, 13.5f),
+                new Vector3(-25.8f, 0.16f, -13.5f),
+                new Vector3(-23.9f, 0.035f, -13.5f),
+                new Vector3(-22.0f, 0.035f, -13.5f),
+                new Vector3(-20.1f, 0.035f, -13.5f)
             });
 
             Transform[] p3Waypoints = CreateLoopWaypoints("PedRoute_Sidewalk_EastAvenue", pedWaypointsRoot.transform, new Vector3[] {
-                new Vector3(18.2f, 0.08f, -13.5f),
-                new Vector3(18.2f, 0.08f, 13.5f),
-                new Vector3(20.1f, 0.04f, 13.5f),
-                new Vector3(22.0f, 0.04f, 13.5f),
-                new Vector3(23.9f, 0.04f, 13.5f),
-                new Vector3(25.8f, 0.08f, 13.5f),
-                new Vector3(25.8f, 0.08f, -13.5f),
-                new Vector3(23.9f, 0.04f, -13.5f),
-                new Vector3(22.0f, 0.04f, -13.5f),
-                new Vector3(20.1f, 0.04f, -13.5f)
+                new Vector3(18.2f, 0.16f, -13.5f),
+                new Vector3(18.2f, 0.16f, 13.5f),
+                new Vector3(20.1f, 0.035f, 13.5f),
+                new Vector3(22.0f, 0.035f, 13.5f),
+                new Vector3(23.9f, 0.035f, 13.5f),
+                new Vector3(25.8f, 0.16f, 13.5f),
+                new Vector3(25.8f, 0.16f, -13.5f),
+                new Vector3(23.9f, 0.035f, -13.5f),
+                new Vector3(22.0f, 0.035f, -13.5f),
+                new Vector3(20.1f, 0.035f, -13.5f)
             });
 
             GameObject charsRoot = new GameObject("--- CHARACTERS (MEMES) ---");
@@ -802,14 +805,19 @@ namespace CityEditor
             GameObject shrekPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/Characters/Shrek/source/Walking.fbx");
             if (shrekPrefab != null)
             {
-                GameObject shrek = (GameObject)PrefabUtility.InstantiatePrefab(shrekPrefab);
-                shrek.name = "NPC_Shrek";
-                shrek.transform.SetParent(charsRoot.transform);
-                shrek.transform.position = p1Waypoints[0].position;
-                shrek.transform.localScale = new Vector3(0.014f, 0.014f, 0.014f);
-                CleanImportedObject(shrek);
+                GameObject shrekRoot = new GameObject("NPC_Shrek");
+                shrekRoot.transform.SetParent(charsRoot.transform);
+                shrekRoot.transform.position = p1Waypoints[0].position;
 
-                Transform bodyObj = shrek.transform.Find("Body");
+                GameObject shrekModel = (GameObject)PrefabUtility.InstantiatePrefab(shrekPrefab);
+                shrekModel.name = "Shrek_Model";
+                shrekModel.transform.SetParent(shrekRoot.transform);
+                shrekModel.transform.localPosition = new Vector3(0f, 0.07f, 0f);
+                shrekModel.transform.localRotation = Quaternion.identity;
+                shrekModel.transform.localScale = new Vector3(0.014f, 0.014f, 0.014f);
+                CleanImportedObject(shrekModel);
+
+                Transform bodyObj = shrekModel.transform.Find("Body");
                 if (bodyObj != null)
                 {
                     SkinnedMeshRenderer smr = bodyObj.GetComponent<SkinnedMeshRenderer>();
@@ -819,7 +827,7 @@ namespace CityEditor
                     }
                 }
 
-                Transform headObj = shrek.transform.Find("head");
+                Transform headObj = shrekModel.transform.Find("head");
                 if (headObj != null)
                 {
                     SkinnedMeshRenderer smr = headObj.GetComponent<SkinnedMeshRenderer>();
@@ -835,13 +843,13 @@ namespace CityEditor
                     }
                 }
 
-                Animator anim = shrek.GetComponent<Animator>();
-                if (anim == null) anim = shrek.AddComponent<Animator>();
+                Animator anim = shrekModel.GetComponent<Animator>();
+                if (anim == null) anim = shrekModel.AddComponent<Animator>();
                 anim.runtimeAnimatorController = shrekAnim;
                 anim.applyRootMotion = false;
 
-                AddCapsuleCollider(shrek, 0.35f, 1.26f);
-                PedestrianAgent pAgent = shrek.AddComponent<PedestrianAgent>();
+                AddCapsuleCollider(shrekRoot, 0.35f, 1.26f);
+                PedestrianAgent pAgent = shrekRoot.AddComponent<PedestrianAgent>();
                 pAgent.waypoints = p1Waypoints;
                 pAgent.speed = 2.2f;
                 pAgent.SetInitialWaypointIndex(1);
@@ -886,20 +894,25 @@ namespace CityEditor
             GameObject bearPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/Characters/DropoutBear/source/TESTBear.fbx");
             if (bearPrefab != null)
             {
-                GameObject bear = (GameObject)PrefabUtility.InstantiatePrefab(bearPrefab);
-                bear.name = "NPC_DropoutBear";
-                bear.transform.SetParent(charsRoot.transform);
-                bear.transform.position = p3Waypoints[0].position;
-                bear.transform.localScale = new Vector3(0.72f, 0.72f, 0.72f);
-                CleanImportedObject(bear);
+                GameObject bearRoot = new GameObject("NPC_DropoutBear");
+                bearRoot.transform.SetParent(charsRoot.transform);
+                bearRoot.transform.position = p3Waypoints[0].position;
 
-                Animator anim = bear.GetComponent<Animator>();
-                if (anim == null) anim = bear.AddComponent<Animator>();
+                GameObject bearModel = (GameObject)PrefabUtility.InstantiatePrefab(bearPrefab);
+                bearModel.name = "Bear_Model";
+                bearModel.transform.SetParent(bearRoot.transform);
+                bearModel.transform.localPosition = new Vector3(0f, -0.407f, 0f);
+                bearModel.transform.localRotation = Quaternion.identity;
+                bearModel.transform.localScale = new Vector3(0.72f, 0.72f, 0.72f);
+                CleanImportedObject(bearModel);
+
+                Animator anim = bearModel.GetComponent<Animator>();
+                if (anim == null) anim = bearModel.AddComponent<Animator>();
                 anim.runtimeAnimatorController = bearAnim;
                 anim.applyRootMotion = false;
 
-                AddCapsuleCollider(bear, 0.32f, 1.1f);
-                PedestrianAgent bAgent = bear.AddComponent<PedestrianAgent>();
+                AddCapsuleCollider(bearRoot, 0.32f, 1.1f);
+                PedestrianAgent bAgent = bearRoot.AddComponent<PedestrianAgent>();
                 bAgent.waypoints = p3Waypoints;
                 bAgent.speed = 2.0f;
                 bAgent.SetInitialWaypointIndex(1);
@@ -941,7 +954,7 @@ namespace CityEditor
                 GameObject amongModel = (GameObject)PrefabUtility.InstantiatePrefab(amongPrefab);
                 amongModel.name = "AmongUs_Model";
                 amongModel.transform.SetParent(amongRoot.transform);
-                amongModel.transform.localPosition = new Vector3(0f, 0.65f, 0f);
+                amongModel.transform.localPosition = new Vector3(0f, 0.69f, 0f);
                 amongModel.transform.localRotation = Quaternion.identity;
                 amongModel.transform.localScale = new Vector3(0.55f, 0.55f, 0.55f);
                 CleanImportedObject(amongModel);

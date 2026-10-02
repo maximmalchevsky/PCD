@@ -25,6 +25,31 @@ namespace Task6_7
             {
                 visualModel = transform.GetChild(0);
             }
+            SnapToGround();
+        }
+
+        private void SnapToGround()
+        {
+            RaycastHit[] groundHits = Physics.RaycastAll(transform.position + Vector3.up * 2f, Vector3.down, 5f);
+            float maxGroundY = float.MinValue;
+            bool foundGround = false;
+            for (int gi = 0; gi < groundHits.Length; gi++)
+            {
+                if (!groundHits[gi].collider.transform.IsChildOf(transform) && !groundHits[gi].collider.isTrigger)
+                {
+                    if (groundHits[gi].point.y > maxGroundY)
+                    {
+                        maxGroundY = groundHits[gi].point.y;
+                        foundGround = true;
+                    }
+                }
+            }
+            if (foundGround)
+            {
+                Vector3 p = transform.position;
+                p.y = maxGroundY;
+                transform.position = p;
+            }
         }
 
         public void SetInitialWaypointIndex(int index)
@@ -52,33 +77,52 @@ namespace Task6_7
             Vector3 nextPos = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
 
             bobTimer += Time.deltaTime * speed * 5f;
-            if (animator == null)
+            if (animator == null && visualModel != null)
             {
-                float bobOffset = Mathf.Abs(Mathf.Sin(bobTimer)) * 0.05f;
-                nextPos.y = target.position.y + bobOffset;
-                if (visualModel != null)
-                {
-                    float tiltAngle = Mathf.Sin(bobTimer) * 4f;
-                    visualModel.localRotation = Quaternion.Euler(0f, 0f, tiltAngle);
-                }
+                float tiltAngle = Mathf.Sin(bobTimer) * 4f;
+                visualModel.localRotation = Quaternion.Euler(0f, 0f, tiltAngle);
             }
 
-            Vector3 moveDelta = nextPos - transform.position;
-            if (moveDelta.sqrMagnitude > 0.0001f)
+            RaycastHit[] groundHits = Physics.RaycastAll(nextPos + Vector3.up * 1.5f, Vector3.down, 4.0f);
+            float maxGroundY = float.MinValue;
+            bool foundGround = false;
+            for (int gi = 0; gi < groundHits.Length; gi++)
+            {
+                if (!groundHits[gi].collider.transform.IsChildOf(transform) && !groundHits[gi].collider.isTrigger)
+                {
+                    if (groundHits[gi].point.y > maxGroundY)
+                    {
+                        maxGroundY = groundHits[gi].point.y;
+                        foundGround = true;
+                    }
+                }
+            }
+            if (foundGround)
+            {
+                float bobOffset = (animator == null) ? Mathf.Abs(Mathf.Sin(bobTimer)) * 0.05f : 0f;
+                float targetY = maxGroundY + bobOffset;
+                nextPos.y = Mathf.MoveTowards(transform.position.y, targetY, 6f * Time.deltaTime);
+            }
+
+            Vector3 horizDelta = new Vector3(nextPos.x - transform.position.x, 0f, nextPos.z - transform.position.z);
+            if (horizDelta.sqrMagnitude > 0.0001f)
             {
                 RaycastHit hit;
-                if (Physics.SphereCast(transform.position + Vector3.up * 0.4f, 0.25f, moveDelta.normalized, out hit, moveDelta.magnitude + 0.15f))
+                if (Physics.SphereCast(transform.position + Vector3.up * 0.55f, 0.22f, horizDelta.normalized, out hit, horizDelta.magnitude + 0.15f))
                 {
                     if (hit.collider != null && !hit.collider.transform.IsChildOf(transform) && !hit.collider.isTrigger)
                     {
-                        Vector3 slide = Vector3.ProjectOnPlane(moveDelta, hit.normal);
+                        Vector3 slide = Vector3.ProjectOnPlane(horizDelta, hit.normal);
                         if (slide.sqrMagnitude > 0.0001f)
                         {
-                            nextPos = transform.position + slide.normalized * Mathf.Min(moveDelta.magnitude, slide.magnitude);
+                            Vector3 adjusted = slide.normalized * Mathf.Min(horizDelta.magnitude, slide.magnitude);
+                            nextPos.x = transform.position.x + adjusted.x;
+                            nextPos.z = transform.position.z + adjusted.z;
                         }
                         else
                         {
-                            nextPos = transform.position;
+                            nextPos.x = transform.position.x;
+                            nextPos.z = transform.position.z;
                         }
                     }
                 }
