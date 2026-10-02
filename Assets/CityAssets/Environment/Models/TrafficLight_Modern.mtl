@@ -1,0 +1,19 @@
+newmtl Mat_Pole
+Kd 0.25 0.27 0.30
+d 1.0
+
+newmtl Mat_Housing
+Kd 0.12 0.13 0.14
+d 1.0
+
+newmtl Mat_Lens_Red
+Kd 0.9 0.1 0.1
+d 1.0
+
+newmtl Mat_Lens_Yellow
+Kd 0.9 0.8 0.1
+d 1.0
+
+newmtl Mat_Lens_Green
+Kd 0.1 0.9 0.2
+d 1.0
