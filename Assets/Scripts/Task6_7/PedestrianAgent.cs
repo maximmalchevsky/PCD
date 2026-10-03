@@ -30,18 +30,23 @@ namespace Task6_7
 
         private void SnapToGround()
         {
-            RaycastHit[] groundHits = Physics.RaycastAll(transform.position + Vector3.up * 2f, Vector3.down, 5f);
+            RaycastHit[] groundHits = Physics.RaycastAll(transform.position + Vector3.up * 1.0f, Vector3.down, 3f);
             float maxGroundY = float.MinValue;
             bool foundGround = false;
             for (int gi = 0; gi < groundHits.Length; gi++)
             {
-                if (!groundHits[gi].collider.transform.IsChildOf(transform) && !groundHits[gi].collider.isTrigger)
+                var col = groundHits[gi].collider;
+                if (col.isTrigger || col.transform.IsChildOf(transform)) continue;
+                if (col.GetComponentInParent<PedestrianAgent>() != null) continue;
+                if (col.GetComponentInParent<CarAgent>() != null) continue;
+                if (col.GetComponentInParent<CharacterController>() != null) continue;
+                if (col.GetComponentInParent<Task4_5.PlayerController>() != null) continue;
+                if (groundHits[gi].point.y > 0.25f) continue;
+
+                if (groundHits[gi].point.y > maxGroundY)
                 {
-                    if (groundHits[gi].point.y > maxGroundY)
-                    {
-                        maxGroundY = groundHits[gi].point.y;
-                        foundGround = true;
-                    }
+                    maxGroundY = groundHits[gi].point.y;
+                    foundGround = true;
                 }
             }
             if (foundGround)
@@ -83,25 +88,32 @@ namespace Task6_7
                 visualModel.localRotation = Quaternion.Euler(0f, 0f, tiltAngle);
             }
 
-            RaycastHit[] groundHits = Physics.RaycastAll(nextPos + Vector3.up * 1.5f, Vector3.down, 4.0f);
+            RaycastHit[] groundHits = Physics.RaycastAll(nextPos + Vector3.up * 1.0f, Vector3.down, 3.0f);
             float maxGroundY = float.MinValue;
             bool foundGround = false;
             for (int gi = 0; gi < groundHits.Length; gi++)
             {
-                if (!groundHits[gi].collider.transform.IsChildOf(transform) && !groundHits[gi].collider.isTrigger)
+                var col = groundHits[gi].collider;
+                if (col.isTrigger || col.transform.IsChildOf(transform)) continue;
+                if (col.GetComponentInParent<PedestrianAgent>() != null) continue;
+                if (col.GetComponentInParent<CarAgent>() != null) continue;
+                if (col.GetComponentInParent<CharacterController>() != null) continue;
+                if (col.GetComponentInParent<Task4_5.PlayerController>() != null) continue;
+                if (groundHits[gi].point.y > 0.25f) continue;
+
+                if (groundHits[gi].point.y > maxGroundY)
                 {
-                    if (groundHits[gi].point.y > maxGroundY)
-                    {
-                        maxGroundY = groundHits[gi].point.y;
-                        foundGround = true;
-                    }
+                    maxGroundY = groundHits[gi].point.y;
+                    foundGround = true;
                 }
             }
             if (foundGround)
             {
-                float bobOffset = (animator == null) ? Mathf.Abs(Mathf.Sin(bobTimer)) * 0.05f : 0f;
-                float targetY = maxGroundY + bobOffset;
-                nextPos.y = Mathf.MoveTowards(transform.position.y, targetY, 6f * Time.deltaTime);
+                nextPos.y = Mathf.MoveTowards(transform.position.y, maxGroundY, 6f * Time.deltaTime);
+            }
+            else
+            {
+                nextPos.y = Mathf.MoveTowards(transform.position.y, target.position.y, 6f * Time.deltaTime);
             }
 
             Vector3 horizDelta = new Vector3(nextPos.x - transform.position.x, 0f, nextPos.z - transform.position.z);

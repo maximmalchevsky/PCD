@@ -812,7 +812,7 @@ namespace CityEditor
                 GameObject shrekModel = (GameObject)PrefabUtility.InstantiatePrefab(shrekPrefab);
                 shrekModel.name = "Shrek_Model";
                 shrekModel.transform.SetParent(shrekRoot.transform);
-                shrekModel.transform.localPosition = new Vector3(0f, 0.07f, 0f);
+                shrekModel.transform.localPosition = new Vector3(0f, 0.095f, 0f);
                 shrekModel.transform.localRotation = Quaternion.identity;
                 shrekModel.transform.localScale = new Vector3(0.014f, 0.014f, 0.014f);
                 CleanImportedObject(shrekModel);
@@ -901,7 +901,7 @@ namespace CityEditor
                 GameObject bearModel = (GameObject)PrefabUtility.InstantiatePrefab(bearPrefab);
                 bearModel.name = "Bear_Model";
                 bearModel.transform.SetParent(bearRoot.transform);
-                bearModel.transform.localPosition = new Vector3(0f, -0.407f, 0f);
+                bearModel.transform.localPosition = Vector3.zero;
                 bearModel.transform.localRotation = Quaternion.identity;
                 bearModel.transform.localScale = new Vector3(0.72f, 0.72f, 0.72f);
                 CleanImportedObject(bearModel);
@@ -922,21 +922,26 @@ namespace CityEditor
             GameObject capyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/Characters/Capybara/source/capybara.obj");
             if (capyPrefab != null)
             {
-                GameObject capy = (GameObject)PrefabUtility.InstantiatePrefab(capyPrefab);
-                capy.name = "NPC_Capybara";
-                capy.transform.SetParent(charsRoot.transform);
-                capy.transform.position = p2Waypoints[5].position;
-                capy.transform.localScale = new Vector3(0.09f, 0.09f, 0.09f);
-                CleanImportedObject(capy);
+                GameObject capyRoot = new GameObject("NPC_Capybara");
+                capyRoot.transform.SetParent(charsRoot.transform);
+                capyRoot.transform.position = p2Waypoints[5].position;
 
-                Renderer[] rends = capy.GetComponentsInChildren<Renderer>(true);
+                GameObject capyModel = (GameObject)PrefabUtility.InstantiatePrefab(capyPrefab);
+                capyModel.name = "Capybara_Model";
+                capyModel.transform.SetParent(capyRoot.transform);
+                capyModel.transform.localPosition = Vector3.zero;
+                capyModel.transform.localRotation = Quaternion.identity;
+                capyModel.transform.localScale = new Vector3(0.09f, 0.09f, 0.09f);
+                CleanImportedObject(capyModel);
+
+                Renderer[] rends = capyModel.GetComponentsInChildren<Renderer>(true);
                 foreach (var r in rends)
                 {
                     if (capyMat != null) r.sharedMaterial = capyMat;
                 }
 
-                AddCapsuleCollider(capy, 0.25f, 0.55f);
-                PedestrianAgent cAgent = capy.AddComponent<PedestrianAgent>();
+                AddCapsuleCollider(capyRoot, 0.25f, 0.55f);
+                PedestrianAgent cAgent = capyRoot.AddComponent<PedestrianAgent>();
                 cAgent.waypoints = p2Waypoints;
                 cAgent.speed = 1.6f;
                 cAgent.SetInitialWaypointIndex(6);
@@ -954,7 +959,7 @@ namespace CityEditor
                 GameObject amongModel = (GameObject)PrefabUtility.InstantiatePrefab(amongPrefab);
                 amongModel.name = "AmongUs_Model";
                 amongModel.transform.SetParent(amongRoot.transform);
-                amongModel.transform.localPosition = new Vector3(0f, 0.69f, 0f);
+                amongModel.transform.localPosition = new Vector3(0f, 0.666f, 0f);
                 amongModel.transform.localRotation = Quaternion.identity;
                 amongModel.transform.localScale = new Vector3(0.55f, 0.55f, 0.55f);
                 CleanImportedObject(amongModel);
@@ -985,9 +990,9 @@ namespace CityEditor
                 GameObject tungModel = (GameObject)PrefabUtility.InstantiatePrefab(tungPrefab);
                 tungModel.name = "TungTung_Model";
                 tungModel.transform.SetParent(tungRoot.transform);
-                tungModel.transform.localPosition = Vector3.zero;
+                tungModel.transform.localPosition = new Vector3(0f, 0.119f, 0f);
                 tungModel.transform.localRotation = Quaternion.identity;
-                tungModel.transform.localScale = new Vector3(0.020f, 0.020f, 0.020f);
+                tungModel.transform.localScale = new Vector3(0.50f, 0.50f, 0.50f);
                 CleanImportedObject(tungModel);
 
                 Renderer[] rends = tungModel.GetComponentsInChildren<Renderer>(true);
