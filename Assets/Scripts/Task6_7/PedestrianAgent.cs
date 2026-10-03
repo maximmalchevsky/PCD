@@ -13,6 +13,7 @@ namespace Task6_7
         private Animator animator;
         private float bobTimer = 0f;
         private Transform visualModel;
+        private bool isWaiting = false;
 
         void Start()
         {
@@ -65,11 +66,84 @@ namespace Task6_7
             }
         }
 
+        private bool ShouldWaitForTraffic(Transform target)
+        {
+            Collider[] frontCols = Physics.OverlapSphere(transform.position + transform.forward * 1.1f, 1.2f);
+            for (int i = 0; i < frontCols.Length; i++)
+            {
+                CarAgent c = frontCols[i].GetComponentInParent<CarAgent>();
+                if (c != null)
+                {
+                    return true;
+                }
+            }
+
+            bool atCurb = (transform.position.y >= 0.10f && target.position.y < 0.10f);
+            if (atCurb)
+            {
+                TrafficLightController[] allLights = Object.FindObjectsByType<TrafficLightController>(FindObjectsInactive.Exclude);
+                TrafficLightController nearestLight = null;
+                float nearestDist = float.MaxValue;
+                for (int i = 0; i < allLights.Length; i++)
+                {
+                    float d = Vector3.Distance(transform.position, allLights[i].transform.position);
+                    if (d < nearestDist && d < 7.0f)
+                    {
+                        nearestDist = d;
+                        nearestLight = allLights[i];
+                    }
+                }
+
+                if (nearestLight != null)
+                {
+                    if (!nearestLight.IsRedOrYellow())
+                    {
+                        return true;
+                    }
+                }
+
+                Collider[] roadCars = Physics.OverlapSphere(target.position, 6.0f);
+                for (int i = 0; i < roadCars.Length; i++)
+                {
+                    CarAgent ca = roadCars[i].GetComponentInParent<CarAgent>();
+                    if (ca != null)
+                    {
+                        float d = Vector3.Distance(ca.transform.position, target.position);
+                        if (d < 3.0f)
+                        {
+                            return true;
+                        }
+                        Vector3 toTarget = target.position - ca.transform.position;
+                        if (Vector3.Dot(ca.transform.forward, toTarget.normalized) > 0.2f && d < 5.5f)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
         void Update()
         {
             if (waypoints == null || waypoints.Length == 0) return;
 
             Transform target = waypoints[currentWaypointIndex];
+            if (target == null) return;
+
+            isWaiting = ShouldWaitForTraffic(target);
+
+            if (animator != null)
+            {
+                animator.speed = isWaiting ? 0f : 1f;
+            }
+
+            if (isWaiting)
+            {
+                return;
+            }
+
             Vector3 flatTarget = new Vector3(target.position.x, transform.position.y, target.position.z);
             Vector3 direction = (flatTarget - transform.position).normalized;
 

@@ -21,8 +21,8 @@ namespace Task6_7
 
         public GameObject[] carPrefabs;
         public Material carMaterial;
-        public int maxActiveCars = 10;
-        public float spawnInterval = 4.0f;
+        public int maxActiveCars = 8;
+        public float spawnInterval = 5.0f;
 
         public List<CarRoute> routes = new List<CarRoute>();
 
@@ -47,7 +47,7 @@ namespace Task6_7
 
             if (routes == null || routes.Count == 0 || carPrefabs == null || carPrefabs.Length == 0) return;
 
-            while (activeCars.Count < Mathf.Min(8, maxActiveCars))
+            while (activeCars.Count < Mathf.Min(6, maxActiveCars))
             {
                 int rIdx = activeCars.Count % routes.Count;
                 CarRoute cr = routes[rIdx];

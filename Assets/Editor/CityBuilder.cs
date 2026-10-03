@@ -697,6 +697,8 @@ namespace CityEditor
                 if (cp != null) loadedCarPrefabs.Add(cp);
             }
             trafficMgr.carPrefabs = loadedCarPrefabs.ToArray();
+            trafficMgr.maxActiveCars = 8;
+            trafficMgr.spawnInterval = 5.0f;
 
             trafficMgr.routes = new List<CarRoute>
             {
