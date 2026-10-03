@@ -13,7 +13,7 @@ namespace Task6_7
         public bool loopWaypoints = false;
 
         private Rigidbody rb;
-        private float currentSpeed = 0f;
+        public float currentSpeed = 0f;
         private float stuckTimer = 0f;
 
         void Start()

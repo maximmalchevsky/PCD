@@ -743,7 +743,9 @@ namespace CityEditor
                 CleanImportedObject(carObj);
                 if (vehMat != null) ApplyMaterialToRenderers(carObj, vehMat);
 
-                AddCapsuleCollider(carObj, 0.55f, 1.9f);
+                BoxCollider carCol = carObj.AddComponent<BoxCollider>();
+                carCol.center = new Vector3(0f, 0.7f, 0f);
+                carCol.size = new Vector3(2.2f, 1.5f, 4.4f);
 
                 Rigidbody rb = carObj.AddComponent<Rigidbody>();
                 rb.isKinematic = true;

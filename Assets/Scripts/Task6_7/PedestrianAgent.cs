@@ -66,59 +66,26 @@ namespace Task6_7
             }
         }
 
-        private bool ShouldWaitForTraffic(Transform target)
+        private bool IsCarBlocking(Transform target)
         {
-            Collider[] frontCols = Physics.OverlapSphere(transform.position + transform.forward * 1.1f, 1.2f);
+            Collider[] frontCols = Physics.OverlapSphere(transform.position + transform.forward * 0.8f + Vector3.up * 0.5f, 0.75f);
             for (int i = 0; i < frontCols.Length; i++)
             {
                 CarAgent c = frontCols[i].GetComponentInParent<CarAgent>();
-                if (c != null)
+                if (c != null && !c.transform.IsChildOf(transform))
                 {
                     return true;
                 }
             }
 
-            bool atCurb = (transform.position.y >= 0.10f && target.position.y < 0.10f);
-            if (atCurb)
+            Vector3 toTarget = (target.position - transform.position).normalized;
+            Collider[] aheadCols = Physics.OverlapSphere(transform.position + toTarget * 1.5f + Vector3.up * 0.5f, 0.9f);
+            for (int i = 0; i < aheadCols.Length; i++)
             {
-                TrafficLightController[] allLights = Object.FindObjectsByType<TrafficLightController>(FindObjectsInactive.Exclude);
-                TrafficLightController nearestLight = null;
-                float nearestDist = float.MaxValue;
-                for (int i = 0; i < allLights.Length; i++)
+                CarAgent ca = aheadCols[i].GetComponentInParent<CarAgent>();
+                if (ca != null && !ca.transform.IsChildOf(transform) && ca.currentSpeed > 1.2f)
                 {
-                    float d = Vector3.Distance(transform.position, allLights[i].transform.position);
-                    if (d < nearestDist && d < 7.0f)
-                    {
-                        nearestDist = d;
-                        nearestLight = allLights[i];
-                    }
-                }
-
-                if (nearestLight != null)
-                {
-                    if (!nearestLight.IsRedOrYellow())
-                    {
-                        return true;
-                    }
-                }
-
-                Collider[] roadCars = Physics.OverlapSphere(target.position, 6.0f);
-                for (int i = 0; i < roadCars.Length; i++)
-                {
-                    CarAgent ca = roadCars[i].GetComponentInParent<CarAgent>();
-                    if (ca != null)
-                    {
-                        float d = Vector3.Distance(ca.transform.position, target.position);
-                        if (d < 3.0f)
-                        {
-                            return true;
-                        }
-                        Vector3 toTarget = target.position - ca.transform.position;
-                        if (Vector3.Dot(ca.transform.forward, toTarget.normalized) > 0.2f && d < 5.5f)
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
             }
 
@@ -132,16 +99,9 @@ namespace Task6_7
             Transform target = waypoints[currentWaypointIndex];
             if (target == null) return;
 
-            isWaiting = ShouldWaitForTraffic(target);
-
             if (animator != null)
             {
-                animator.speed = isWaiting ? 0f : 1f;
-            }
-
-            if (isWaiting)
-            {
-                return;
+                animator.speed = 1f;
             }
 
             Vector3 flatTarget = new Vector3(target.position.x, transform.position.y, target.position.z);
@@ -153,14 +113,20 @@ namespace Task6_7
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
-            Vector3 nextPos = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
-
             bobTimer += Time.deltaTime * speed * 5f;
             if (animator == null && visualModel != null)
             {
                 float tiltAngle = Mathf.Sin(bobTimer) * 4f;
                 visualModel.localRotation = Quaternion.Euler(0f, 0f, tiltAngle);
             }
+
+            isWaiting = IsCarBlocking(target);
+            if (isWaiting)
+            {
+                return;
+            }
+
+            Vector3 nextPos = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
 
             RaycastHit[] groundHits = Physics.RaycastAll(nextPos + Vector3.up * 1.0f, Vector3.down, 3.0f);
             float maxGroundY = float.MinValue;
@@ -194,21 +160,30 @@ namespace Task6_7
             if (horizDelta.sqrMagnitude > 0.0001f)
             {
                 RaycastHit hit;
-                if (Physics.SphereCast(transform.position + Vector3.up * 0.55f, 0.22f, horizDelta.normalized, out hit, horizDelta.magnitude + 0.15f))
+                if (Physics.SphereCast(transform.position + Vector3.up * 0.55f, 0.25f, horizDelta.normalized, out hit, horizDelta.magnitude + 0.2f))
                 {
                     if (hit.collider != null && !hit.collider.transform.IsChildOf(transform) && !hit.collider.isTrigger)
                     {
-                        Vector3 slide = Vector3.ProjectOnPlane(horizDelta, hit.normal);
-                        if (slide.sqrMagnitude > 0.0001f)
-                        {
-                            Vector3 adjusted = slide.normalized * Mathf.Min(horizDelta.magnitude, slide.magnitude);
-                            nextPos.x = transform.position.x + adjusted.x;
-                            nextPos.z = transform.position.z + adjusted.z;
-                        }
-                        else
+                        CarAgent hitCar = hit.collider.GetComponentInParent<CarAgent>();
+                        if (hitCar != null)
                         {
                             nextPos.x = transform.position.x;
                             nextPos.z = transform.position.z;
+                        }
+                        else
+                        {
+                            Vector3 slide = Vector3.ProjectOnPlane(horizDelta, hit.normal);
+                            if (slide.sqrMagnitude > 0.0001f)
+                            {
+                                Vector3 adjusted = slide.normalized * Mathf.Min(horizDelta.magnitude, slide.magnitude);
+                                nextPos.x = transform.position.x + adjusted.x;
+                                nextPos.z = transform.position.z + adjusted.z;
+                            }
+                            else
+                            {
+                                nextPos.x = transform.position.x;
+                                nextPos.z = transform.position.z;
+                            }
                         }
                     }
                 }
