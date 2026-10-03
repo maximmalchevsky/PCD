@@ -13,7 +13,6 @@ namespace Task6_7
         private Animator animator;
         private float bobTimer = 0f;
         private Transform visualModel;
-        private bool isWaiting = false;
 
         void Start()
         {
@@ -66,44 +65,11 @@ namespace Task6_7
             }
         }
 
-        private bool IsCarBlocking(Transform target)
-        {
-            Collider[] frontCols = Physics.OverlapSphere(transform.position + transform.forward * 0.8f + Vector3.up * 0.5f, 0.75f);
-            for (int i = 0; i < frontCols.Length; i++)
-            {
-                CarAgent c = frontCols[i].GetComponentInParent<CarAgent>();
-                if (c != null && !c.transform.IsChildOf(transform))
-                {
-                    return true;
-                }
-            }
-
-            Vector3 toTarget = (target.position - transform.position).normalized;
-            Collider[] aheadCols = Physics.OverlapSphere(transform.position + toTarget * 1.5f + Vector3.up * 0.5f, 0.9f);
-            for (int i = 0; i < aheadCols.Length; i++)
-            {
-                CarAgent ca = aheadCols[i].GetComponentInParent<CarAgent>();
-                if (ca != null && !ca.transform.IsChildOf(transform) && ca.currentSpeed > 1.2f)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         void Update()
         {
             if (waypoints == null || waypoints.Length == 0) return;
 
             Transform target = waypoints[currentWaypointIndex];
-            if (target == null) return;
-
-            if (animator != null)
-            {
-                animator.speed = 1f;
-            }
-
             Vector3 flatTarget = new Vector3(target.position.x, transform.position.y, target.position.z);
             Vector3 direction = (flatTarget - transform.position).normalized;
 
@@ -113,20 +79,14 @@ namespace Task6_7
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
+            Vector3 nextPos = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
+
             bobTimer += Time.deltaTime * speed * 5f;
             if (animator == null && visualModel != null)
             {
                 float tiltAngle = Mathf.Sin(bobTimer) * 4f;
                 visualModel.localRotation = Quaternion.Euler(0f, 0f, tiltAngle);
             }
-
-            isWaiting = IsCarBlocking(target);
-            if (isWaiting)
-            {
-                return;
-            }
-
-            Vector3 nextPos = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
 
             RaycastHit[] groundHits = Physics.RaycastAll(nextPos + Vector3.up * 1.0f, Vector3.down, 3.0f);
             float maxGroundY = float.MinValue;
@@ -160,30 +120,21 @@ namespace Task6_7
             if (horizDelta.sqrMagnitude > 0.0001f)
             {
                 RaycastHit hit;
-                if (Physics.SphereCast(transform.position + Vector3.up * 0.55f, 0.25f, horizDelta.normalized, out hit, horizDelta.magnitude + 0.2f))
+                if (Physics.SphereCast(transform.position + Vector3.up * 0.55f, 0.22f, horizDelta.normalized, out hit, horizDelta.magnitude + 0.15f))
                 {
                     if (hit.collider != null && !hit.collider.transform.IsChildOf(transform) && !hit.collider.isTrigger)
                     {
-                        CarAgent hitCar = hit.collider.GetComponentInParent<CarAgent>();
-                        if (hitCar != null)
+                        Vector3 slide = Vector3.ProjectOnPlane(horizDelta, hit.normal);
+                        if (slide.sqrMagnitude > 0.0001f)
                         {
-                            nextPos.x = transform.position.x;
-                            nextPos.z = transform.position.z;
+                            Vector3 adjusted = slide.normalized * Mathf.Min(horizDelta.magnitude, slide.magnitude);
+                            nextPos.x = transform.position.x + adjusted.x;
+                            nextPos.z = transform.position.z + adjusted.z;
                         }
                         else
                         {
-                            Vector3 slide = Vector3.ProjectOnPlane(horizDelta, hit.normal);
-                            if (slide.sqrMagnitude > 0.0001f)
-                            {
-                                Vector3 adjusted = slide.normalized * Mathf.Min(horizDelta.magnitude, slide.magnitude);
-                                nextPos.x = transform.position.x + adjusted.x;
-                                nextPos.z = transform.position.z + adjusted.z;
-                            }
-                            else
-                            {
-                                nextPos.x = transform.position.x;
-                                nextPos.z = transform.position.z;
-                            }
+                            nextPos.x = transform.position.x;
+                            nextPos.z = transform.position.z;
                         }
                     }
                 }

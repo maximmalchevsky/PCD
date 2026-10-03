@@ -697,8 +697,6 @@ namespace CityEditor
                 if (cp != null) loadedCarPrefabs.Add(cp);
             }
             trafficMgr.carPrefabs = loadedCarPrefabs.ToArray();
-            trafficMgr.maxActiveCars = 8;
-            trafficMgr.spawnInterval = 5.0f;
 
             trafficMgr.routes = new List<CarRoute>
             {
@@ -743,9 +741,7 @@ namespace CityEditor
                 CleanImportedObject(carObj);
                 if (vehMat != null) ApplyMaterialToRenderers(carObj, vehMat);
 
-                BoxCollider carCol = carObj.AddComponent<BoxCollider>();
-                carCol.center = new Vector3(0f, 0.7f, 0f);
-                carCol.size = new Vector3(2.2f, 1.5f, 4.4f);
+                AddCapsuleCollider(carObj, 0.55f, 1.9f);
 
                 Rigidbody rb = carObj.AddComponent<Rigidbody>();
                 rb.isKinematic = true;

@@ -21,8 +21,8 @@ namespace Task6_7
 
         public GameObject[] carPrefabs;
         public Material carMaterial;
-        public int maxActiveCars = 8;
-        public float spawnInterval = 5.0f;
+        public int maxActiveCars = 10;
+        public float spawnInterval = 4.0f;
 
         public List<CarRoute> routes = new List<CarRoute>();
 
@@ -47,7 +47,7 @@ namespace Task6_7
 
             if (routes == null || routes.Count == 0 || carPrefabs == null || carPrefabs.Length == 0) return;
 
-            while (activeCars.Count < Mathf.Min(6, maxActiveCars))
+            while (activeCars.Count < Mathf.Min(8, maxActiveCars))
             {
                 int rIdx = activeCars.Count % routes.Count;
                 CarRoute cr = routes[rIdx];
@@ -121,10 +121,11 @@ namespace Task6_7
                 foreach (var r in rends) r.sharedMaterial = carMaterial;
             }
 
-            BoxCollider col = carObj.GetComponent<BoxCollider>();
-            if (col == null) col = carObj.AddComponent<BoxCollider>();
-            col.center = new Vector3(0f, 0.7f, 0f);
-            col.size = new Vector3(2.2f, 1.5f, 4.4f);
+            CapsuleCollider col = carObj.GetComponent<CapsuleCollider>();
+            if (col == null) col = carObj.AddComponent<CapsuleCollider>();
+            col.radius = 0.55f;
+            col.height = 1.9f;
+            col.center = new Vector3(0f, 0.95f, 0f);
 
             Rigidbody rb = carObj.GetComponent<Rigidbody>();
             if (rb == null) rb = carObj.AddComponent<Rigidbody>();
