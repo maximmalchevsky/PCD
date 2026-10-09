@@ -2,20 +2,14 @@ using UnityEngine;
 
 namespace Task8_11
 {
-    [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+    [RequireComponent(typeof(BoxCollider), typeof(Rigidbody))]
     public class PaperSheet : MonoBehaviour
     {
         public float width = 0.21f;
+        public float thickness = 0.002f;
         public float length = 0.297f;
-        public float thickness = 0.0012f;
-        public float archDepth = 0.007f;
-        public float cornerCurl = 0.018f;
-        public float flutterDrag = 0.22f;
-        public float flutterLift = 0.065f;
-        public float terminalVelocity = 1.35f;
 
         private Rigidbody rb;
-        private float flutterSeed;
         private FanController roomFan;
 
         void Awake()
@@ -25,206 +19,36 @@ namespace Task8_11
             {
                 rb = gameObject.AddComponent<Rigidbody>();
             }
-            rb.mass = 0.022f;
-            rb.linearDamping = 0.8f;
-            rb.angularDamping = 1.6f;
+            rb.mass = 0.02f;
+            rb.linearDamping = 1.2f;
+            rb.angularDamping = 2.0f;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
-            flutterSeed = Random.Range(0f, 100f);
+            transform.localScale = new Vector3(width, thickness, length);
 
-            BuildCurvedPaperMesh();
+            BoxCollider col = GetComponent<BoxCollider>();
+            if (col != null)
+            {
+                col.size = Vector3.one;
+                col.center = Vector3.zero;
+            }
+
+            PickupableItem pickup = GetComponent<PickupableItem>();
+            if (pickup == null)
+            {
+                pickup = gameObject.AddComponent<PickupableItem>();
+            }
+            if (string.IsNullOrEmpty(pickup.itemName))
+            {
+                pickup.itemName = name.Replace("Paper_", "").Replace("_", " ");
+            }
+            pickup.rb = rb;
         }
 
         void Start()
         {
             roomFan = Object.FindAnyObjectByType<FanController>();
-
-            Vector3 p = transform.position;
-            if (p.x > 302.5f || p.x < 297.5f || p.z > 302.5f || p.z < 297.5f)
-            {
-                transform.position = new Vector3(Mathf.Clamp(p.x, 297.8f, 302.2f), -49.44f, Mathf.Clamp(p.z, 297.8f, 302.2f));
-            }
-            else if (p.y < -49.445f && p.y > -49.60f)
-            {
-                transform.position = new Vector3(p.x, -49.435f, p.z);
-            }
-        }
-
-        private void BuildCurvedPaperMesh()
-        {
-            int nx = 8;
-            int nz = 12;
-            int numGrid = (nx + 1) * (nz + 1);
-
-            Vector3[] vertices = new Vector3[numGrid * 2];
-            Vector2[] uvs = new Vector2[numGrid * 2];
-
-            float minY = float.MaxValue;
-
-            for (int j = 0; j <= nz; j++)
-            {
-                float v = (float)j / nz;
-                float z = (v - 0.5f) * length;
-
-                for (int i = 0; i <= nx; i++)
-                {
-                    float u = (float)i / nx;
-                    float x = (u - 0.5f) * width;
-
-                    float arch = Mathf.Sin(u * Mathf.PI) * archDepth;
-                    float bow = Mathf.Sin(v * Mathf.PI) * (archDepth * 0.45f);
-
-                    float c1 = Mathf.Max(0f, (u - 0.65f) + (v - 0.65f) - 0.15f);
-                    float curlTopRight = c1 * c1 * (cornerCurl * 4.5f);
-
-                    float c2 = Mathf.Max(0f, (0.35f - u) + (0.35f - v) - 0.15f);
-                    float curlBottomLeft = c2 * c2 * (cornerCurl * 2.2f);
-
-                    float yBot = arch + bow + curlTopRight + curlBottomLeft;
-                    float yTop = yBot + thickness;
-
-                    if (yBot < minY) minY = yBot;
-
-                    int topIdx = j * (nx + 1) + i;
-                    int botIdx = numGrid + topIdx;
-
-                    vertices[topIdx] = new Vector3(x, yTop, z);
-                    vertices[botIdx] = new Vector3(x, yBot, z);
-
-                    uvs[topIdx] = new Vector2(u, v);
-                    uvs[botIdx] = new Vector2(u, v);
-                }
-            }
-
-            float maxY = 0f;
-            float shiftY = -minY + 0.001f;
-            for (int k = 0; k < vertices.Length; k++)
-            {
-                vertices[k].y += shiftY;
-                if (vertices[k].y > maxY) maxY = vertices[k].y;
-            }
-
-            int topTrisCount = nx * nz * 6;
-            int skirtTrisCount = (nx * 2 + nz * 2) * 6;
-            int[] triangles = new int[topTrisCount * 2 + skirtTrisCount];
-            int triOffset = 0;
-
-            for (int j = 0; j < nz; j++)
-            {
-                for (int i = 0; i < nx; i++)
-                {
-                    int row1 = j * (nx + 1);
-                    int row2 = (j + 1) * (nx + 1);
-
-                    int v0 = row1 + i;
-                    int v1 = row1 + i + 1;
-                    int v2 = row2 + i + 1;
-                    int v3 = row2 + i;
-
-                    triangles[triOffset++] = v0;
-                    triangles[triOffset++] = v2;
-                    triangles[triOffset++] = v1;
-
-                    triangles[triOffset++] = v0;
-                    triangles[triOffset++] = v3;
-                    triangles[triOffset++] = v2;
-
-                    int b0 = numGrid + v0;
-                    int b1 = numGrid + v1;
-                    int b2 = numGrid + v2;
-                    int b3 = numGrid + v3;
-
-                    triangles[triOffset++] = b0;
-                    triangles[triOffset++] = b1;
-                    triangles[triOffset++] = b2;
-
-                    triangles[triOffset++] = b0;
-                    triangles[triOffset++] = b2;
-                    triangles[triOffset++] = b3;
-                }
-            }
-
-            for (int i = 0; i < nx; i++)
-            {
-                int tA = i;
-                int tB = i + 1;
-                int bA = numGrid + tA;
-                int bB = numGrid + tB;
-
-                triangles[triOffset++] = tA;
-                triangles[triOffset++] = bB;
-                triangles[triOffset++] = tB;
-
-                triangles[triOffset++] = tA;
-                triangles[triOffset++] = bA;
-                triangles[triOffset++] = bB;
-
-                int topRowA = nz * (nx + 1) + i;
-                int topRowB = topRowA + 1;
-                int botRowA = numGrid + topRowA;
-                int botRowB = numGrid + topRowB;
-
-                triangles[triOffset++] = topRowA;
-                triangles[triOffset++] = topRowB;
-                triangles[triOffset++] = botRowB;
-
-                triangles[triOffset++] = topRowA;
-                triangles[triOffset++] = botRowB;
-                triangles[triOffset++] = botRowA;
-            }
-
-            for (int j = 0; j < nz; j++)
-            {
-                int tLeftA = j * (nx + 1);
-                int tLeftB = (j + 1) * (nx + 1);
-                int bLeftA = numGrid + tLeftA;
-                int bLeftB = numGrid + tLeftB;
-
-                triangles[triOffset++] = tLeftA;
-                triangles[triOffset++] = tLeftB;
-                triangles[triOffset++] = bLeftB;
-
-                triangles[triOffset++] = tLeftA;
-                triangles[triOffset++] = bLeftB;
-                triangles[triOffset++] = bLeftA;
-
-                int tRightA = j * (nx + 1) + nx;
-                int tRightB = (j + 1) * (nx + 1) + nx;
-                int bRightA = numGrid + tRightA;
-                int bRightB = numGrid + tRightB;
-
-                triangles[triOffset++] = tRightA;
-                triangles[triOffset++] = bRightB;
-                triangles[triOffset++] = tRightB;
-
-                triangles[triOffset++] = tRightA;
-                triangles[triOffset++] = bRightA;
-                triangles[triOffset++] = bRightB;
-            }
-
-            Mesh mesh = new Mesh();
-            mesh.name = "CurvedPaperMesh";
-            mesh.vertices = vertices;
-            mesh.uv = uvs;
-            mesh.triangles = triangles;
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-
-            MeshFilter mf = GetComponent<MeshFilter>();
-            if (mf != null)
-            {
-                mf.sharedMesh = mesh;
-            }
-
-            transform.localScale = Vector3.one;
-
-            BoxCollider col = GetComponent<BoxCollider>();
-            if (col != null)
-            {
-                float colH = maxY + 0.003f;
-                col.center = new Vector3(0f, colH * 0.5f, 0f);
-                col.size = new Vector3(width, colH, length);
-            }
+            transform.localScale = new Vector3(width, thickness, length);
         }
 
         void FixedUpdate()
@@ -232,34 +56,9 @@ namespace Task8_11
             if (rb == null || rb.isKinematic) return;
 
             Vector3 vel = rb.linearVelocity;
-            float speed = vel.magnitude;
-
-            if (speed > 0.04f)
+            if (vel.y < -0.1f)
             {
-                Vector3 normal = transform.up;
-                float dot = Vector3.Dot(vel.normalized, normal);
-
-                float faceResistance = dot * speed * speed * flutterDrag;
-                rb.AddForce(-normal * faceResistance, ForceMode.Force);
-
-                Vector3 planeVel = Vector3.ProjectOnPlane(vel, normal);
-                float glideSpeed = planeVel.magnitude;
-                if (glideSpeed > 0.08f)
-                {
-                    Vector3 liftDir = normal * (dot < 0f ? 1f : -1f);
-                    rb.AddForce(liftDir * (glideSpeed * speed * flutterLift), ForceMode.Force);
-                }
-
-                if (vel.y < -0.15f)
-                {
-                    float flutterWave = Mathf.Sin(Time.time * 7.5f + flutterSeed) * 0.0035f;
-                    rb.AddTorque(transform.forward * flutterWave + transform.right * (flutterWave * 0.4f), ForceMode.Force);
-                }
-
-                if (rb.linearVelocity.y < -terminalVelocity)
-                {
-                    rb.linearVelocity = new Vector3(rb.linearVelocity.x, -terminalVelocity, rb.linearVelocity.z);
-                }
+                rb.AddForce(Vector3.up * (-vel.y * 0.45f * rb.mass * 9.81f), ForceMode.Force);
             }
 
             if (roomFan != null && roomFan.isSpinning)
@@ -274,37 +73,22 @@ namespace Task8_11
                     Vector3 outDir = horiz.sqrMagnitude > 0.01f ? horiz.normalized : new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)).normalized;
 
                     float proximity = 1f - Mathf.Clamp01(dist / roomFan.windRadius);
-                    Vector3 updraft = Vector3.up * (1.2f + proximity * 1.5f);
-                    Vector3 swirl = Vector3.Cross(Vector3.up, outDir) * 0.8f;
-                    Vector3 blast = (outDir * 2.2f + updraft + swirl) * (proximity * 0.85f);
-                    if (rb.position.x > 302.35f && blast.x > 0f) blast.x = -0.2f;
-                    if (rb.position.x < 297.65f && blast.x < 0f) blast.x = 0.2f;
-                    if (rb.position.z > 302.35f && blast.z > 0f) blast.z = -0.2f;
-                    if (rb.position.z < 297.65f && blast.z < 0f) blast.z = 0.2f;
+                    Vector3 updraft = Vector3.up * (0.8f + proximity * 1.0f);
+                    Vector3 swirl = Vector3.Cross(Vector3.up, outDir) * 0.5f;
+                    Vector3 blast = (outDir * 1.5f + updraft + swirl) * (proximity * 0.4f);
 
                     rb.AddForce(blast, ForceMode.Force);
-                    rb.AddTorque(Random.insideUnitSphere * 0.08f, ForceMode.Force);
-
-                    if (rb.position.y > fanPos.y - 0.35f)
-                    {
-                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, -0.6f, rb.linearVelocity.z);
-                    }
+                    rb.AddTorque(Random.insideUnitSphere * 0.04f, ForceMode.Force);
                 }
             }
 
             Vector3 curP = rb.position;
-            float cX = Mathf.Clamp(curP.x, 297.42f, 302.58f);
-            float cZ = Mathf.Clamp(curP.z, 297.42f, 302.58f);
-            float cY = Mathf.Clamp(curP.y, -49.99f, -47.95f);
+            float cX = Mathf.Clamp(curP.x, 297.45f, 302.55f);
+            float cZ = Mathf.Clamp(curP.z, 297.45f, 302.55f);
+            float cY = Mathf.Clamp(curP.y, -49.99f, -48.05f);
             if (curP.x != cX || curP.z != cZ || curP.y != cY)
             {
                 rb.position = new Vector3(cX, cY, cZ);
-                Vector3 v = rb.linearVelocity;
-                if ((curP.x > 302.58f && v.x > 0f) || (curP.x < 297.42f && v.x < 0f)) v.x = -v.x * 0.2f;
-                if ((curP.z > 302.58f && v.z > 0f) || (curP.z < 297.42f && v.z < 0f)) v.z = -v.z * 0.2f;
-                if (curP.y > -47.95f && v.y > 0f) v.y = -0.5f;
-                if (curP.y < -49.99f && v.y < 0f) v.y = 0f;
-                rb.linearVelocity = v;
             }
         }
     }

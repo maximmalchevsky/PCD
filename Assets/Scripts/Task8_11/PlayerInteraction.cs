@@ -545,19 +545,21 @@ namespace Task8_11
             if (doorTr == null) return;
 
             Transform doorLeafTr = doorTr.Find("Door_Leaf");
-            if (doorLeafTr != null)
-            {
-                BoxCollider leafCol = doorLeafTr.GetComponent<BoxCollider>();
-                if (leafCol == null) leafCol = doorLeafTr.gameObject.AddComponent<BoxCollider>();
-                leafCol.size = Vector3.one;
-                leafCol.center = Vector3.zero;
-            }
+            Transform handleParent = doorLeafTr != null ? doorLeafTr : doorTr;
 
-            if (doorTr.Find("Door_Handle_Assembly") != null) return;
+            if (handleParent.Find("Door_Handle_Assembly") != null) return;
 
             GameObject handleAssembly = new GameObject("Door_Handle_Assembly");
-            handleAssembly.transform.SetParent(doorTr, false);
-            handleAssembly.transform.localPosition = new Vector3(0f, 0.95f, -0.76f);
+            handleAssembly.transform.SetParent(handleParent, false);
+            if (handleParent == doorLeafTr)
+            {
+                handleAssembly.transform.localPosition = new Vector3(0.52f, 0f, -0.32f);
+                handleAssembly.transform.localScale = new Vector3(1f / Mathf.Max(0.001f, doorLeafTr.localScale.x), 1f / Mathf.Max(0.001f, doorLeafTr.localScale.y), 1f / Mathf.Max(0.001f, doorLeafTr.localScale.z));
+            }
+            else
+            {
+                handleAssembly.transform.localPosition = new Vector3(0f, 0.95f, -0.76f);
+            }
             handleAssembly.transform.localRotation = Quaternion.identity;
 
             Material brassMat = null;
