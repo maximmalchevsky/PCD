@@ -38,6 +38,12 @@ namespace Task8_11
         void Start()
         {
             roomFan = Object.FindAnyObjectByType<FanController>();
+
+            Vector3 p = transform.position;
+            if (p.y < -49.445f && p.y > -49.60f)
+            {
+                transform.position = new Vector3(p.x, -49.435f, p.z);
+            }
         }
 
         private void BuildCurvedPaperMesh()
@@ -49,6 +55,8 @@ namespace Task8_11
             Vector3[] vertices = new Vector3[numGrid * 2];
             Vector2[] uvs = new Vector2[numGrid * 2];
 
+            float minY = float.MaxValue;
+
             for (int j = 0; j <= nz; j++)
             {
                 float v = (float)j / nz;
@@ -59,8 +67,8 @@ namespace Task8_11
                     float u = (float)i / nx;
                     float x = (u - 0.5f) * width;
 
-                    float arch = -Mathf.Sin(u * Mathf.PI) * archDepth;
-                    float bow = -Mathf.Sin(v * Mathf.PI) * (archDepth * 0.45f);
+                    float arch = Mathf.Sin(u * Mathf.PI) * archDepth;
+                    float bow = Mathf.Sin(v * Mathf.PI) * (archDepth * 0.45f);
 
                     float c1 = Mathf.Max(0f, (u - 0.65f) + (v - 0.65f) - 0.15f);
                     float curlTopRight = c1 * c1 * (cornerCurl * 4.5f);
@@ -68,8 +76,10 @@ namespace Task8_11
                     float c2 = Mathf.Max(0f, (0.35f - u) + (0.35f - v) - 0.15f);
                     float curlBottomLeft = c2 * c2 * (cornerCurl * 2.2f);
 
-                    float yTop = arch + bow + curlTopRight + curlBottomLeft;
-                    float yBot = yTop - thickness;
+                    float yBot = arch + bow + curlTopRight + curlBottomLeft;
+                    float yTop = yBot + thickness;
+
+                    if (yBot < minY) minY = yBot;
 
                     int topIdx = j * (nx + 1) + i;
                     int botIdx = numGrid + topIdx;
@@ -80,6 +90,14 @@ namespace Task8_11
                     uvs[topIdx] = new Vector2(u, v);
                     uvs[botIdx] = new Vector2(u, v);
                 }
+            }
+
+            float maxY = 0f;
+            float shiftY = -minY + 0.001f;
+            for (int k = 0; k < vertices.Length; k++)
+            {
+                vertices[k].y += shiftY;
+                if (vertices[k].y > maxY) maxY = vertices[k].y;
             }
 
             int topTrisCount = nx * nz * 6;
@@ -199,8 +217,9 @@ namespace Task8_11
             BoxCollider col = GetComponent<BoxCollider>();
             if (col != null)
             {
-                col.center = new Vector3(0f, 0.003f, 0f);
-                col.size = new Vector3(width, 0.015f, length);
+                float colH = maxY + 0.003f;
+                col.center = new Vector3(0f, colH * 0.5f, 0f);
+                col.size = new Vector3(width, colH, length);
             }
         }
 

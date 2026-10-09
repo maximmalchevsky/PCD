@@ -252,6 +252,7 @@ namespace Task8_11
         private void PickUp(PickupableItem item)
         {
             heldItem = item;
+            heldItem.rb.isKinematic = false;
             heldItem.rb.useGravity = false;
             heldItem.rb.linearVelocity = Vector3.zero;
             heldItem.rb.angularVelocity = Vector3.zero;
@@ -490,6 +491,11 @@ namespace Task8_11
                     n.Contains("Sofa") || n.Contains("Bookcase") || n.Contains("Fridge") || n.Contains("Coat"))
                 {
                     rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+                }
+
+                if (n.Contains("Desk") || n.Contains("Table_Coffee") || n.Contains("Coffee_Station_Table"))
+                {
+                    rb.isKinematic = true;
                 }
 
                 PickupableItem pItem = t.gameObject.AddComponent<PickupableItem>();
