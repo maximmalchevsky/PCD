@@ -277,7 +277,7 @@ namespace Task8_11
             if (heldItem != null && body == heldItem.rb) return;
 
             Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z).normalized;
-            body.AddForceAtPosition(pushDir * pushPower * 10f, hit.point, ForceMode.Force);
+            body.AddForce(pushDir * pushPower * 8f, ForceMode.Force);
         }
 
         void OnGUI()

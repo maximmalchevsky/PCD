@@ -8,8 +8,8 @@ namespace Task8_11
         public float rotationSpeed = 750f;
         public bool isSpinning = false;
         public Transform windOrigin;
-        public float windRadius = 4.0f;
-        public float windForce = 16f;
+        public float windRadius = 3.8f;
+        public float windForce = 14f;
 
         void Update()
         {
@@ -41,28 +41,28 @@ namespace Task8_11
                     }
                     outward.Normalize();
 
-                    Vector3 windDir = outward * 0.95f + Vector3.down * 0.25f;
+                    Vector3 windDir = outward * 0.90f + Vector3.down * 0.40f;
 
-                    if (rb.position.y < origin.y - 1.1f)
-                    {
-                        float liftPulse = 0.35f + Mathf.PingPong(Time.time * 5f + rb.position.x * 2f, 0.3f);
-                        windDir += Vector3.up * liftPulse;
-                    }
-
-                    rb.AddForce(windDir.normalized * windForce, ForceMode.Force);
+                    float actualForce = Mathf.Min(windForce, rb.mass * 12f);
+                    rb.AddForce(windDir.normalized * actualForce, ForceMode.Force);
 
                     Vector3 torqueDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-0.3f, 0.3f), Random.Range(-1f, 1f));
-                    rb.AddTorque(torqueDir * windForce * 0.4f, ForceMode.Force);
+                    rb.AddTorque(torqueDir * (actualForce * 0.25f), ForceMode.Force);
 
-                    if (rb.linearVelocity.y > 1.2f)
+                    if (rb.linearVelocity.y > 0.1f)
                     {
-                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 1.2f, rb.linearVelocity.z);
+                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0.1f, rb.linearVelocity.z);
                     }
 
-                    if (rb.position.y > origin.y - 0.25f)
+                    if (rb.linearVelocity.magnitude > 2.2f)
                     {
-                        rb.position = new Vector3(rb.position.x, origin.y - 0.25f, rb.position.z);
-                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, -0.4f, rb.linearVelocity.z);
+                        rb.linearVelocity = rb.linearVelocity.normalized * 2.2f;
+                    }
+
+                    if (rb.position.y > origin.y - 0.45f)
+                    {
+                        rb.position = new Vector3(rb.position.x, origin.y - 0.45f, rb.position.z);
+                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, -0.5f, rb.linearVelocity.z);
                     }
                 }
             }
