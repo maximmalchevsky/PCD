@@ -448,6 +448,8 @@ namespace Task8_11
             if (roomRoot == null) roomRoot = GameObject.Find("Room_Root");
             if (roomRoot == null) return;
 
+            EnsureDoorHandle(roomRoot);
+
             for (int c = 0; c < roomRoot.transform.childCount; c++)
             {
                 Transform t = roomRoot.transform.GetChild(c);
@@ -484,6 +486,7 @@ namespace Task8_11
                     n.Contains("Table_Coffee") || n.Contains("Coffee_Station_Table") ||
                     n.Contains("Bookcase") || n.Contains("Fridge") || n.Contains("Coat_Rack"))
                 {
+                    FitColliderToVisuals(t.gameObject);
                     Rigidbody srb = t.GetComponent<Rigidbody>();
                     if (srb != null)
                     {
@@ -494,6 +497,7 @@ namespace Task8_11
 
                 if (n.Contains("Chair"))
                 {
+                    FitColliderToVisuals(t.gameObject);
                     Rigidbody crb = t.GetComponent<Rigidbody>();
                     if (crb == null) crb = t.gameObject.AddComponent<Rigidbody>();
                     crb.isKinematic = true;
@@ -510,6 +514,7 @@ namespace Task8_11
                     n.Contains("Keyboard") || n.Contains("Mouse") || n.Contains("Pillow") ||
                     n.Contains("Speaker") || n.Contains("Coffee_Machine") || n.Contains("TV_Modern"))
                 {
+                    FitColliderToVisuals(t.gameObject);
                     Rigidbody prb = t.GetComponent<Rigidbody>();
                     if (prb == null) prb = t.gameObject.AddComponent<Rigidbody>();
                     prb.mass = GetAppropriateMass(n);
@@ -525,6 +530,177 @@ namespace Task8_11
                     if (pItem == null) pItem = t.gameObject.AddComponent<PickupableItem>();
                     pItem.itemName = GetFriendlyPropName(n);
                     pItem.rb = prb;
+                }
+            }
+        }
+
+        private void EnsureDoorHandle(GameObject roomRoot)
+        {
+            Transform doorTr = roomRoot.transform.Find("Entrance_Door");
+            if (doorTr == null)
+            {
+                GameObject d = GameObject.Find("Entrance_Door");
+                if (d != null) doorTr = d.transform;
+            }
+            if (doorTr == null) return;
+
+            Transform doorLeafTr = doorTr.Find("Door_Leaf");
+            if (doorLeafTr != null)
+            {
+                BoxCollider leafCol = doorLeafTr.GetComponent<BoxCollider>();
+                if (leafCol == null) leafCol = doorLeafTr.gameObject.AddComponent<BoxCollider>();
+                leafCol.size = Vector3.one;
+                leafCol.center = Vector3.zero;
+            }
+
+            if (doorTr.Find("Door_Handle_Assembly") != null) return;
+
+            GameObject handleAssembly = new GameObject("Door_Handle_Assembly");
+            handleAssembly.transform.SetParent(doorTr, false);
+            handleAssembly.transform.localPosition = new Vector3(0f, 0.95f, -0.76f);
+            handleAssembly.transform.localRotation = Quaternion.identity;
+
+            Material brassMat = null;
+            var allMats = Resources.FindObjectsOfTypeAll<Material>();
+            for (int m = 0; m < allMats.Length; m++)
+            {
+                if (allMats[m] != null && allMats[m].name.Contains("Capsule_Gold"))
+                {
+                    brassMat = allMats[m];
+                    break;
+                }
+            }
+
+            GameObject escutcheon = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            escutcheon.name = "Handle_Plate";
+            escutcheon.transform.SetParent(handleAssembly.transform, false);
+            escutcheon.transform.localPosition = Vector3.zero;
+            escutcheon.transform.localScale = new Vector3(0.08f, 0.22f, 0.055f);
+            if (brassMat != null) escutcheon.GetComponent<Renderer>().sharedMaterial = brassMat;
+            Object.Destroy(escutcheon.GetComponent<Collider>());
+
+            GameObject insideStem = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            insideStem.name = "Inside_Stem";
+            insideStem.transform.SetParent(handleAssembly.transform, false);
+            insideStem.transform.localPosition = new Vector3(0.052f, 0.045f, 0f);
+            insideStem.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            insideStem.transform.localScale = new Vector3(0.022f, 0.022f, 0.022f);
+            if (brassMat != null) insideStem.GetComponent<Renderer>().sharedMaterial = brassMat;
+            Object.Destroy(insideStem.GetComponent<Collider>());
+
+            GameObject insideLever = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            insideLever.name = "Inside_Lever";
+            insideLever.transform.SetParent(handleAssembly.transform, false);
+            insideLever.transform.localPosition = new Vector3(0.068f, 0.045f, 0.065f);
+            insideLever.transform.localScale = new Vector3(0.022f, 0.024f, 0.13f);
+            if (brassMat != null) insideLever.GetComponent<Renderer>().sharedMaterial = brassMat;
+            Object.Destroy(insideLever.GetComponent<Collider>());
+
+            GameObject outsideStem = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            outsideStem.name = "Outside_Stem";
+            outsideStem.transform.SetParent(handleAssembly.transform, false);
+            outsideStem.transform.localPosition = new Vector3(-0.052f, 0.045f, 0f);
+            outsideStem.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            outsideStem.transform.localScale = new Vector3(0.022f, 0.022f, 0.022f);
+            if (brassMat != null) outsideStem.GetComponent<Renderer>().sharedMaterial = brassMat;
+            Object.Destroy(outsideStem.GetComponent<Collider>());
+
+            GameObject outsideLever = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            outsideLever.name = "Outside_Lever";
+            outsideLever.transform.SetParent(handleAssembly.transform, false);
+            outsideLever.transform.localPosition = new Vector3(-0.068f, 0.045f, 0.065f);
+            outsideLever.transform.localScale = new Vector3(0.022f, 0.024f, 0.13f);
+            if (brassMat != null) outsideLever.GetComponent<Renderer>().sharedMaterial = brassMat;
+            Object.Destroy(outsideLever.GetComponent<Collider>());
+
+            GameObject keyhole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            keyhole.name = "Keyhole_Cylinder";
+            keyhole.transform.SetParent(handleAssembly.transform, false);
+            keyhole.transform.localPosition = new Vector3(0f, -0.055f, 0f);
+            keyhole.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            keyhole.transform.localScale = new Vector3(0.016f, 0.042f, 0.016f);
+            if (brassMat != null) keyhole.GetComponent<Renderer>().sharedMaterial = brassMat;
+            Object.Destroy(keyhole.GetComponent<Collider>());
+        }
+
+        private void FitColliderToVisuals(GameObject obj)
+        {
+            Renderer[] rends = obj.GetComponentsInChildren<Renderer>(true);
+            if (rends == null || rends.Length == 0) return;
+
+            Matrix4x4 w2l = obj.transform.worldToLocalMatrix;
+            bool hasPoint = false;
+            Vector3 min = Vector3.zero;
+            Vector3 max = Vector3.zero;
+
+            for (int r = 0; r < rends.Length; r++)
+            {
+                Renderer rend = rends[r];
+                if (rend == null || !rend.enabled) continue;
+                if (rend is ParticleSystemRenderer || rend.GetComponent<Light>() != null) continue;
+                string rn = rend.gameObject.name;
+                if (rn.Contains("Strip") || rn.Contains("Accent") || rn.Contains("Mat") || rn.Contains("Gizmo")) continue;
+
+                MeshFilter mf = rend.GetComponent<MeshFilter>();
+                if (mf != null && mf.sharedMesh != null)
+                {
+                    Vector3[] verts = mf.sharedMesh.vertices;
+                    Matrix4x4 l2p = w2l * rend.transform.localToWorldMatrix;
+                    for (int v = 0; v < verts.Length; v++)
+                    {
+                        Vector3 pt = l2p.MultiplyPoint3x4(verts[v]);
+                        if (!hasPoint)
+                        {
+                            min = pt;
+                            max = pt;
+                            hasPoint = true;
+                        }
+                        else
+                        {
+                            min = Vector3.Min(min, pt);
+                            max = Vector3.Max(max, pt);
+                        }
+                    }
+                }
+                else
+                {
+                    Bounds b = rend.bounds;
+                    Vector3 b0 = w2l.MultiplyPoint3x4(new Vector3(b.min.x, b.min.y, b.min.z));
+                    Vector3 b1 = w2l.MultiplyPoint3x4(new Vector3(b.max.x, b.max.y, b.max.z));
+                    Vector3 b2 = w2l.MultiplyPoint3x4(new Vector3(b.min.x, b.min.y, b.max.z));
+                    Vector3 b3 = w2l.MultiplyPoint3x4(new Vector3(b.max.x, b.min.y, b.min.z));
+                    Vector3 b4 = w2l.MultiplyPoint3x4(new Vector3(b.min.x, b.max.y, b.min.z));
+                    Vector3 b5 = w2l.MultiplyPoint3x4(new Vector3(b.max.x, b.max.y, b.min.z));
+                    Vector3 b6 = w2l.MultiplyPoint3x4(new Vector3(b.min.x, b.max.y, b.max.z));
+                    Vector3 b7 = w2l.MultiplyPoint3x4(new Vector3(b.max.x, b.max.y, b.max.z));
+
+                    Vector3[] bPts = new Vector3[] { b0, b1, b2, b3, b4, b5, b6, b7 };
+                    for (int bp = 0; bp < bPts.Length; bp++)
+                    {
+                        if (!hasPoint)
+                        {
+                            min = bPts[bp];
+                            max = bPts[bp];
+                            hasPoint = true;
+                        }
+                        else
+                        {
+                            min = Vector3.Min(min, bPts[bp]);
+                            max = Vector3.Max(max, bPts[bp]);
+                        }
+                    }
+                }
+            }
+
+            if (hasPoint)
+            {
+                Vector3 size = max - min;
+                if (size.x > 0.005f && size.y > 0.005f && size.z > 0.005f)
+                {
+                    BoxCollider bc = obj.GetComponent<BoxCollider>();
+                    if (bc == null) bc = obj.AddComponent<BoxCollider>();
+                    bc.center = (min + max) * 0.5f;
+                    bc.size = size;
                 }
             }
         }
