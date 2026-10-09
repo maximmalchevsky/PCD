@@ -69,6 +69,37 @@ namespace Task12_16
             if (boom != null) boom.localRotation = Quaternion.Euler(currentBoomAngle, 0f, 0f);
             if (stick != null) stick.localRotation = Quaternion.Euler(currentStickAngle, 0f, 0f);
             if (bucket != null) bucket.localRotation = Quaternion.Euler(currentBucketAngle, 0f, 0f);
+
+            UpdateScoopPhysics();
+        }
+
+        private void UpdateScoopPhysics()
+        {
+            if (bucket == null) return;
+
+            if (currentBucketAngle >= 10f)
+            {
+                Vector3 bucketCenter = bucket.position;
+                Collider[] hits = Physics.OverlapSphere(bucketCenter, 1.35f);
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    if (hits[i] == null) continue;
+                    GranularItem item = hits[i].GetComponent<GranularItem>();
+                    if (item != null)
+                    {
+                        Rigidbody irb = item.GetComponent<Rigidbody>();
+                        if (irb != null && !irb.isKinematic)
+                        {
+                            Vector3 targetPos = bucketCenter + bucket.forward * 0.15f;
+                            Vector3 pull = targetPos - irb.position;
+                            if (pull.sqrMagnitude > 0.02f)
+                            {
+                                irb.AddForce(pull * 16f, ForceMode.Acceleration);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         void FixedUpdate()

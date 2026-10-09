@@ -8,6 +8,7 @@ namespace Task12_16
         public Transform trolley;
         public Transform hook;
         public LineRenderer cableRenderer;
+        public Camera hookCamera;
 
         public float slewSpeed = 24f;
         public float trolleySpeed = 6.5f;
@@ -22,7 +23,9 @@ namespace Task12_16
         public float maxCableLength = 22.5f;
 
         public Rigidbody attachedCargo = null;
-        public float cargoGrabRadius = 2.2f;
+        public float cargoGrabRadius = 2.4f;
+
+        private bool isUsingHookCamera = false;
 
         protected override void Start()
         {
@@ -42,6 +45,13 @@ namespace Task12_16
                 cableRenderer.endWidth = 0.035f;
                 cableRenderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
                 cableRenderer.material.color = new Color(0.2f, 0.2f, 0.22f);
+            }
+
+            if (hookCamera != null)
+            {
+                hookCamera.enabled = false;
+                AudioListener al = hookCamera.GetComponent<AudioListener>();
+                if (al != null) al.enabled = false;
             }
         }
 
@@ -78,6 +88,13 @@ namespace Task12_16
             {
                 cableRenderer.SetPosition(0, trolley.position);
                 cableRenderer.SetPosition(1, hook.position);
+            }
+
+            if (Input.GetKeyDown(KeyCode.C) && hookCamera != null && vehicleCamera != null)
+            {
+                isUsingHookCamera = !isUsingHookCamera;
+                vehicleCamera.enabled = !isUsingHookCamera;
+                hookCamera.enabled = isUsingHookCamera;
             }
 
             if (Input.GetKeyDown(KeyCode.Space))
@@ -132,6 +149,20 @@ namespace Task12_16
             }
         }
 
+        public bool HasCargoNearby()
+        {
+            if (hook == null || attachedCargo != null) return false;
+            Collider[] hits = Physics.OverlapSphere(hook.position, cargoGrabRadius);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i] == null) continue;
+                if (hits[i].transform.IsChildOf(transform)) continue;
+                Rigidbody r = hits[i].attachedRigidbody;
+                if (r != null && !r.isKinematic) return true;
+            }
+            return false;
+        }
+
         public override void ExitVehicle()
         {
             if (attachedCargo != null)
@@ -139,6 +170,8 @@ namespace Task12_16
                 attachedCargo.isKinematic = false;
                 attachedCargo = null;
             }
+            if (hookCamera != null) hookCamera.enabled = false;
+            isUsingHookCamera = false;
             base.ExitVehicle();
         }
 
@@ -148,8 +181,18 @@ namespace Task12_16
 
             if (isPlayerInside)
             {
-                string status = attachedCargo != null ? "ГРУЗ ПОДВЕШЕН: " + attachedCargo.name : "КРЮК СВОБОДЕН";
-                string info = "A / D — Поворот стрелы  |  W / S — Движение каретки\nR / F — Лебедка (спуск / подъем крюка)  |  Пробел — Захват / отцепка груза\nВысота крюка: " + (24f - currentCableLength).ToString("F1") + " м  |  Вылет: " + currentTrolleyDist.ToString("F1") + " м  |  " + status;
+                string status = "КРЮК СВОБОДЕН";
+                if (attachedCargo != null)
+                {
+                    status = "ГРУЗ ПОДВЕШЕН: " + attachedCargo.name + " (Нажмите [Пробел] чтобы отцепить)";
+                }
+                else if (HasCargoNearby())
+                {
+                    status = "ГРУЗ РЯДОМ! (Нажмите [Пробел] чтобы захватить)";
+                }
+
+                string camHint = hookCamera != null ? "  |  C — Вид из кабины / Сверху на крюк" : "";
+                string info = "A / D — Поворот стрелы  |  W / S — Каретка  |  R / F — Лебедка  |  Пробел — Захват/отцепка" + camHint + "\nВысота крюка: " + (24f - currentCableLength).ToString("F1") + " м  |  Вылет: " + currentTrolleyDist.ToString("F1") + " м  |  " + status;
                 DrawVehicleHUD(info);
             }
         }
