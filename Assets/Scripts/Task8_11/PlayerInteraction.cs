@@ -28,7 +28,7 @@ namespace Task8_11
 
             GameObject hp = new GameObject("HoldPoint");
             hp.transform.SetParent(playerCamera.transform);
-            hp.transform.localPosition = new Vector3(0f, -0.2f, 1.25f);
+            hp.transform.localPosition = new Vector3(0f, -0.12f, 0.75f);
             hp.transform.localRotation = Quaternion.identity;
             holdPoint = hp.transform;
         }

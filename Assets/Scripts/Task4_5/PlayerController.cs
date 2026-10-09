@@ -13,7 +13,7 @@ namespace Task4_5
         public float runSpeed = 10f;
         public float lookSpeed = 2f;
         public float gravity = -19.62f;
-        public float jumpHeight = 1.5f;
+        public float jumpHeight = 0.70f;
 
         private CharacterController controller;
         private Transform cameraTransform;
@@ -36,6 +36,7 @@ namespace Task4_5
             if (playerCamera != null)
             {
                 cameraTransform = playerCamera.transform;
+                cameraTransform.localPosition = new Vector3(0f, 0.62f, 0f);
             }
         }
 

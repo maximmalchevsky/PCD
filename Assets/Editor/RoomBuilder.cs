@@ -45,10 +45,9 @@ namespace Task8_11
 
             Material litShaderMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
 
-            Material portalMat = new Material(litShaderMat);
-            portalMat.SetColor("_BaseColor", new Color(0.2f, 0.75f, 1.0f));
-            portalMat.EnableKeyword("_EMISSION");
-            portalMat.SetColor("_EmissionColor", new Color(0.1f, 0.7f, 1.0f) * 3.5f);
+            Material portalMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+            portalMat.SetColor("_BaseColor", new Color(0.1f, 0.85f, 1.0f, 1.0f));
+            portalMat.color = new Color(0.1f, 0.85f, 1.0f, 1.0f);
             AssetDatabase.CreateAsset(portalMat, "Assets/Materials/Mat_Portal_Blue.mat");
 
             Material wallMat = new Material(litShaderMat);
@@ -77,9 +76,9 @@ namespace Task8_11
             handleMat.SetFloat("_Smoothness", 0.75f);
 
             Vector3 rCenter = new Vector3(300f, -50f, 300f);
-            float rWidth = 7.2f;
-            float rLength = 7.2f;
-            float rHeight = 3.2f;
+            float rWidth = 5.6f;
+            float rLength = 5.6f;
+            float rHeight = 2.2f;
             float floorY = rCenter.y;
             float ceilY = floorY + rHeight;
 
@@ -114,36 +113,36 @@ namespace Task8_11
             GameObject backWallLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
             backWallLeft.name = "Wall_Back_Left";
             backWallLeft.transform.SetParent(roomRoot.transform);
-            backWallLeft.transform.position = new Vector3(rCenter.x - 2.4f, floorY + rHeight * 0.5f, rCenter.z + rLength * 0.5f + 0.1f);
-            backWallLeft.transform.localScale = new Vector3(2.4f, rHeight, 0.2f);
+            backWallLeft.transform.position = new Vector3(rCenter.x - 1.85f, floorY + rHeight * 0.5f, rCenter.z + rLength * 0.5f + 0.1f);
+            backWallLeft.transform.localScale = new Vector3(1.9f, rHeight, 0.2f);
             backWallLeft.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject backWallRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
             backWallRight.name = "Wall_Back_Right";
             backWallRight.transform.SetParent(roomRoot.transform);
-            backWallRight.transform.position = new Vector3(rCenter.x + 2.4f, floorY + rHeight * 0.5f, rCenter.z + rLength * 0.5f + 0.1f);
-            backWallRight.transform.localScale = new Vector3(2.4f, rHeight, 0.2f);
+            backWallRight.transform.position = new Vector3(rCenter.x + 1.85f, floorY + rHeight * 0.5f, rCenter.z + rLength * 0.5f + 0.1f);
+            backWallRight.transform.localScale = new Vector3(1.9f, rHeight, 0.2f);
             backWallRight.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject backWallUnder = GameObject.CreatePrimitive(PrimitiveType.Cube);
             backWallUnder.name = "Wall_Back_UnderWindow";
             backWallUnder.transform.SetParent(roomRoot.transform);
-            backWallUnder.transform.position = new Vector3(rCenter.x, floorY + 0.5f, rCenter.z + rLength * 0.5f + 0.1f);
-            backWallUnder.transform.localScale = new Vector3(2.4f, 1.0f, 0.2f);
+            backWallUnder.transform.position = new Vector3(rCenter.x, floorY + 0.40f, rCenter.z + rLength * 0.5f + 0.1f);
+            backWallUnder.transform.localScale = new Vector3(1.8f, 0.8f, 0.2f);
             backWallUnder.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject backWallOver = GameObject.CreatePrimitive(PrimitiveType.Cube);
             backWallOver.name = "Wall_Back_OverWindow";
             backWallOver.transform.SetParent(roomRoot.transform);
-            backWallOver.transform.position = new Vector3(rCenter.x, floorY + 2.75f, rCenter.z + rLength * 0.5f + 0.1f);
-            backWallOver.transform.localScale = new Vector3(2.4f, 0.9f, 0.2f);
+            backWallOver.transform.position = new Vector3(rCenter.x, floorY + 1.95f, rCenter.z + rLength * 0.5f + 0.1f);
+            backWallOver.transform.localScale = new Vector3(1.8f, 0.5f, 0.2f);
             backWallOver.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject windowGlass = GameObject.CreatePrimitive(PrimitiveType.Cube);
             windowGlass.name = "Window_Glass";
             windowGlass.transform.SetParent(roomRoot.transform);
-            windowGlass.transform.position = new Vector3(rCenter.x, floorY + 1.65f, rCenter.z + rLength * 0.5f + 0.05f);
-            windowGlass.transform.localScale = new Vector3(2.3f, 1.3f, 0.04f);
+            windowGlass.transform.position = new Vector3(rCenter.x, floorY + 1.25f, rCenter.z + rLength * 0.5f + 0.05f);
+            windowGlass.transform.localScale = new Vector3(1.75f, 0.9f, 0.04f);
             Material glassMat = new Material(litShaderMat);
             glassMat.SetColor("_BaseColor", new Color(0.6f, 0.85f, 0.95f, 0.45f));
             glassMat.SetFloat("_Surface", 1f);
@@ -151,12 +150,12 @@ namespace Task8_11
 
             GameObject blindsRoot = new GameObject("Window_Blinds_Mechanism");
             blindsRoot.transform.SetParent(roomRoot.transform);
-            blindsRoot.transform.position = new Vector3(rCenter.x, floorY + 1.65f, rCenter.z + rLength * 0.5f - 0.05f);
+            blindsRoot.transform.position = new Vector3(rCenter.x, floorY + 1.25f, rCenter.z + rLength * 0.5f - 0.05f);
 
             List<Transform> slatList = new List<Transform>();
-            int slatCount = 9;
-            float slatSpacing = 1.3f / slatCount;
-            float slatStartOffset = -0.65f + slatSpacing * 0.5f;
+            int slatCount = 8;
+            float slatSpacing = 0.9f / slatCount;
+            float slatStartOffset = -0.45f + slatSpacing * 0.5f;
 
             for (int i = 0; i < slatCount; i++)
             {
@@ -164,14 +163,14 @@ namespace Task8_11
                 slat.name = "Slat_" + i;
                 slat.transform.SetParent(blindsRoot.transform);
                 slat.transform.localPosition = new Vector3(0f, slatStartOffset + i * slatSpacing, 0f);
-                slat.transform.localScale = new Vector3(2.26f, 0.018f, 0.12f);
+                slat.transform.localScale = new Vector3(1.72f, 0.015f, 0.10f);
                 slat.GetComponent<Renderer>().sharedMaterial = blindsMat;
                 Object.DestroyImmediate(slat.GetComponent<Collider>());
                 slatList.Add(slat.transform);
             }
 
             BoxCollider blindsTrigger = blindsRoot.AddComponent<BoxCollider>();
-            blindsTrigger.size = new Vector3(2.3f, 1.35f, 0.35f);
+            blindsTrigger.size = new Vector3(1.8f, 1.0f, 0.35f);
             blindsTrigger.isTrigger = true;
 
             WindowBlinds blindsComp = blindsRoot.AddComponent<WindowBlinds>();
@@ -181,48 +180,48 @@ namespace Task8_11
             GameObject leftWallFront = GameObject.CreatePrimitive(PrimitiveType.Cube);
             leftWallFront.name = "Wall_Left_Front";
             leftWallFront.transform.SetParent(roomRoot.transform);
-            leftWallFront.transform.position = new Vector3(rCenter.x - rWidth * 0.5f - 0.1f, floorY + rHeight * 0.5f, rCenter.z - 2.1f);
-            leftWallFront.transform.localScale = new Vector3(0.2f, rHeight, 3.0f);
+            leftWallFront.transform.position = new Vector3(rCenter.x - rWidth * 0.5f - 0.1f, floorY + rHeight * 0.5f, rCenter.z - 1.6f);
+            leftWallFront.transform.localScale = new Vector3(0.2f, rHeight, 2.4f);
             leftWallFront.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject leftWallBack = GameObject.CreatePrimitive(PrimitiveType.Cube);
             leftWallBack.name = "Wall_Left_Back";
             leftWallBack.transform.SetParent(roomRoot.transform);
-            leftWallBack.transform.position = new Vector3(rCenter.x - rWidth * 0.5f - 0.1f, floorY + rHeight * 0.5f, rCenter.z + 2.1f);
-            leftWallBack.transform.localScale = new Vector3(0.2f, rHeight, 3.0f);
+            leftWallBack.transform.position = new Vector3(rCenter.x - rWidth * 0.5f - 0.1f, floorY + rHeight * 0.5f, rCenter.z + 1.6f);
+            leftWallBack.transform.localScale = new Vector3(0.2f, rHeight, 2.4f);
             leftWallBack.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject leftWallOverDoor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             leftWallOverDoor.name = "Wall_Left_OverDoor";
             leftWallOverDoor.transform.SetParent(roomRoot.transform);
-            leftWallOverDoor.transform.position = new Vector3(rCenter.x - rWidth * 0.5f - 0.1f, floorY + 2.7f, rCenter.z);
-            leftWallOverDoor.transform.localScale = new Vector3(0.2f, 1.0f, 1.2f);
+            leftWallOverDoor.transform.position = new Vector3(rCenter.x - rWidth * 0.5f - 0.1f, floorY + 1.8f, rCenter.z);
+            leftWallOverDoor.transform.localScale = new Vector3(0.2f, 0.8f, 1.0f);
             leftWallOverDoor.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject doorFrame = GameObject.CreatePrimitive(PrimitiveType.Cube);
             doorFrame.name = "Entrance_DoorFrame";
             doorFrame.transform.SetParent(roomRoot.transform);
-            doorFrame.transform.position = new Vector3(rCenter.x - rWidth * 0.5f, floorY + 1.1f, rCenter.z);
-            doorFrame.transform.localScale = new Vector3(0.18f, 2.2f, 1.16f);
+            doorFrame.transform.position = new Vector3(rCenter.x - rWidth * 0.5f, floorY + 0.7f, rCenter.z);
+            doorFrame.transform.localScale = new Vector3(0.18f, 1.42f, 0.98f);
             doorFrame.GetComponent<Renderer>().sharedMaterial = woodMat;
             Object.DestroyImmediate(doorFrame.GetComponent<Collider>());
 
             GameObject doorPivot = new GameObject("Entrance_Door");
             doorPivot.transform.SetParent(roomRoot.transform);
-            doorPivot.transform.position = new Vector3(rCenter.x - rWidth * 0.5f, floorY, rCenter.z + 0.52f);
+            doorPivot.transform.position = new Vector3(rCenter.x - rWidth * 0.5f, floorY, rCenter.z + 0.44f);
 
             GameObject doorLeaf = GameObject.CreatePrimitive(PrimitiveType.Cube);
             doorLeaf.name = "Door_Leaf";
             doorLeaf.transform.SetParent(doorPivot.transform);
-            doorLeaf.transform.localPosition = new Vector3(0f, 1.05f, -0.52f);
-            doorLeaf.transform.localScale = new Vector3(0.08f, 2.1f, 1.04f);
+            doorLeaf.transform.localPosition = new Vector3(0f, 0.675f, -0.44f);
+            doorLeaf.transform.localScale = new Vector3(0.06f, 1.35f, 0.88f);
             doorLeaf.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject doorKnob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             doorKnob.name = "Knob";
             doorKnob.transform.SetParent(doorLeaf.transform);
-            doorKnob.transform.localPosition = new Vector3(0.55f, 0f, -0.4f);
-            doorKnob.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            doorKnob.transform.localPosition = new Vector3(0.55f, 0f, -0.34f);
+            doorKnob.transform.localScale = new Vector3(0.08f, 0.08f, 0.08f);
             doorKnob.GetComponent<Renderer>().sharedMaterial = handleMat;
             Object.DestroyImmediate(doorKnob.GetComponent<Collider>());
 
@@ -232,38 +231,38 @@ namespace Task8_11
 
             GameObject ceilingLightObj = new GameObject("Room_Ceiling_Light");
             ceilingLightObj.transform.SetParent(roomRoot.transform);
-            ceilingLightObj.transform.position = new Vector3(rCenter.x, floorY + rHeight - 0.25f, rCenter.z);
+            ceilingLightObj.transform.position = new Vector3(rCenter.x, floorY + rHeight - 0.2f, rCenter.z);
             Light ceilingLight = ceilingLightObj.AddComponent<Light>();
             ceilingLight.type = LightType.Point;
-            ceilingLight.range = 10f;
-            ceilingLight.intensity = 2.4f;
+            ceilingLight.range = 8.5f;
+            ceilingLight.intensity = 2.2f;
             ceilingLight.color = new Color(1.0f, 0.95f, 0.88f);
 
             GameObject lampLightObj = new GameObject("Desk_Lamp_Light");
             lampLightObj.transform.SetParent(roomRoot.transform);
-            lampLightObj.transform.position = new Vector3(rCenter.x + 2.5f, floorY + 1.25f, rCenter.z + 1.3f);
+            lampLightObj.transform.position = new Vector3(rCenter.x + 1.9f, floorY + 0.95f, rCenter.z + 1.1f);
             Light tableLampLight = lampLightObj.AddComponent<Light>();
             tableLampLight.type = LightType.Point;
-            tableLampLight.range = 4.0f;
-            tableLampLight.intensity = 1.8f;
+            tableLampLight.range = 3.5f;
+            tableLampLight.intensity = 1.6f;
             tableLampLight.color = new Color(1.0f, 0.92f, 0.72f);
 
             GameObject switchObj = new GameObject("Light_Switch");
             switchObj.transform.SetParent(roomRoot.transform);
-            switchObj.transform.position = new Vector3(rCenter.x - rWidth * 0.5f + 0.08f, floorY + 1.4f, rCenter.z + 0.85f);
+            switchObj.transform.position = new Vector3(rCenter.x - rWidth * 0.5f + 0.08f, floorY + 0.95f, rCenter.z + 0.7f);
 
             GameObject switchPlate = GameObject.CreatePrimitive(PrimitiveType.Cube);
             switchPlate.name = "Switch_Plate";
             switchPlate.transform.SetParent(switchObj.transform);
             switchPlate.transform.localPosition = Vector3.zero;
-            switchPlate.transform.localScale = new Vector3(0.04f, 0.16f, 0.12f);
+            switchPlate.transform.localScale = new Vector3(0.04f, 0.14f, 0.10f);
             switchPlate.GetComponent<Renderer>().sharedMaterial = wallMat;
 
             GameObject switchLever = GameObject.CreatePrimitive(PrimitiveType.Cube);
             switchLever.name = "Switch_Lever";
             switchLever.transform.SetParent(switchObj.transform);
             switchLever.transform.localPosition = new Vector3(0.025f, 0f, 0f);
-            switchLever.transform.localScale = new Vector3(0.035f, 0.06f, 0.03f);
+            switchLever.transform.localScale = new Vector3(0.03f, 0.05f, 0.025f);
             switchLever.GetComponent<Renderer>().sharedMaterial = woodMat;
             Object.DestroyImmediate(switchLever.GetComponent<Collider>());
 
@@ -274,21 +273,21 @@ namespace Task8_11
 
             GameObject fanRoot = new GameObject("Ceiling_Fan");
             fanRoot.transform.SetParent(roomRoot.transform);
-            fanRoot.transform.position = new Vector3(rCenter.x + 2.1f, floorY + rHeight - 0.15f, rCenter.z + 2.1f);
+            fanRoot.transform.position = new Vector3(rCenter.x + 1.6f, floorY + rHeight - 0.12f, rCenter.z + 1.6f);
 
             GameObject fanRod = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             fanRod.name = "Fan_Rod";
             fanRod.transform.SetParent(fanRoot.transform);
-            fanRod.transform.localPosition = new Vector3(0f, -0.15f, 0f);
-            fanRod.transform.localScale = new Vector3(0.04f, 0.15f, 0.04f);
+            fanRod.transform.localPosition = new Vector3(0f, -0.10f, 0f);
+            fanRod.transform.localScale = new Vector3(0.03f, 0.10f, 0.03f);
             fanRod.GetComponent<Renderer>().sharedMaterial = woodMat;
             Object.DestroyImmediate(fanRod.GetComponent<Collider>());
 
             GameObject fanHub = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             fanHub.name = "Fan_Hub";
             fanHub.transform.SetParent(fanRoot.transform);
-            fanHub.transform.localPosition = new Vector3(0f, -0.32f, 0f);
-            fanHub.transform.localScale = new Vector3(0.32f, 0.05f, 0.32f);
+            fanHub.transform.localPosition = new Vector3(0f, -0.22f, 0f);
+            fanHub.transform.localScale = new Vector3(0.24f, 0.04f, 0.24f);
             fanHub.GetComponent<Renderer>().sharedMaterial = woodMat;
             Object.DestroyImmediate(fanHub.GetComponent<Collider>());
 
@@ -302,144 +301,144 @@ namespace Task8_11
                 GameObject blade = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 blade.name = "Blade_" + bi;
                 blade.transform.SetParent(fanBlades.transform);
-                blade.transform.localPosition = Quaternion.Euler(0f, bAngle, 0f) * new Vector3(0.5f, 0f, 0f);
+                blade.transform.localPosition = Quaternion.Euler(0f, bAngle, 0f) * new Vector3(0.38f, 0f, 0f);
                 blade.transform.localRotation = Quaternion.Euler(6f, bAngle, 0f);
-                blade.transform.localScale = new Vector3(0.65f, 0.015f, 0.14f);
+                blade.transform.localScale = new Vector3(0.50f, 0.012f, 0.11f);
                 blade.GetComponent<Renderer>().sharedMaterial = woodMat;
                 Object.DestroyImmediate(blade.GetComponent<Collider>());
             }
 
             BoxCollider fanTrigger = fanRoot.AddComponent<BoxCollider>();
-            fanTrigger.size = new Vector3(1.5f, 1.0f, 1.5f);
-            fanTrigger.center = new Vector3(0f, -0.35f, 0f);
+            fanTrigger.size = new Vector3(1.2f, 0.8f, 1.2f);
+            fanTrigger.center = new Vector3(0f, -0.25f, 0f);
             fanTrigger.isTrigger = true;
 
             FanController fanComp = fanRoot.AddComponent<FanController>();
             fanComp.blades = fanBlades.transform;
             fanComp.windOrigin = fanRoot.transform;
-            fanComp.windRadius = 3.2f;
-            fanComp.windForce = 25f;
+            fanComp.windRadius = 2.6f;
+            fanComp.windForce = 22f;
             fanComp.isSpinning = false;
 
             GameObject deskPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/desk.fbx");
             if (deskPrefab != null)
             {
-                SpawnProp(deskPrefab, new Vector3(rCenter.x + 2.2f, floorY, rCenter.z + 2.1f), Quaternion.Euler(0f, 180f, 0f), 0.20f, "Desk", 40f, roomRoot.transform);
+                SpawnProp(deskPrefab, new Vector3(rCenter.x + 1.7f, floorY, rCenter.z + 1.6f), Quaternion.Euler(0f, 180f, 0f), 0.14f, "Desk", 30f, roomRoot.transform);
             }
 
             GameObject chairDeskPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/chairDesk.fbx");
             if (chairDeskPrefab != null)
             {
-                SpawnProp(chairDeskPrefab, new Vector3(rCenter.x + 1.25f, floorY, rCenter.z + 2.1f), Quaternion.Euler(0f, 45f, 0f), 0.25f, "Chair_Office", 10f, roomRoot.transform);
+                SpawnProp(chairDeskPrefab, new Vector3(rCenter.x + 0.95f, floorY, rCenter.z + 1.6f), Quaternion.Euler(0f, 45f, 0f), 0.17f, "Chair_Office", 8f, roomRoot.transform);
             }
 
             GameObject coffeeTablePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/tableCoffee.fbx");
             if (coffeeTablePrefab != null)
             {
-                SpawnProp(coffeeTablePrefab, new Vector3(rCenter.x - 0.8f, floorY, rCenter.z + 1.5f), Quaternion.identity, 0.20f, "Table_Coffee", 16f, roomRoot.transform);
+                SpawnProp(coffeeTablePrefab, new Vector3(rCenter.x - 0.6f, floorY, rCenter.z + 1.1f), Quaternion.identity, 0.14f, "Table_Coffee", 12f, roomRoot.transform);
             }
 
             GameObject chairPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/chair.fbx");
             if (chairPrefab != null)
             {
-                SpawnProp(chairPrefab, new Vector3(rCenter.x - 1.8f, floorY, rCenter.z + 1.5f), Quaternion.Euler(0f, 90f, 0f), 0.20f, "Chair_Side_1", 8f, roomRoot.transform);
-                SpawnProp(chairPrefab, new Vector3(rCenter.x + 0.2f, floorY, rCenter.z + 1.5f), Quaternion.Euler(0f, -90f, 0f), 0.20f, "Chair_Side_2", 8f, roomRoot.transform);
+                SpawnProp(chairPrefab, new Vector3(rCenter.x - 1.35f, floorY, rCenter.z + 1.1f), Quaternion.Euler(0f, 90f, 0f), 0.14f, "Chair_Side_1", 6f, roomRoot.transform);
+                SpawnProp(chairPrefab, new Vector3(rCenter.x + 0.15f, floorY, rCenter.z + 1.1f), Quaternion.Euler(0f, -90f, 0f), 0.14f, "Chair_Side_2", 6f, roomRoot.transform);
             }
 
             GameObject cabinetRoot = new GameObject("Cabinet_With_Doors");
             cabinetRoot.transform.SetParent(roomRoot.transform);
-            cabinetRoot.transform.position = new Vector3(rCenter.x, floorY, rCenter.z - rLength * 0.5f + 0.4f);
+            cabinetRoot.transform.position = new Vector3(rCenter.x, floorY, rCenter.z - rLength * 0.5f + 0.32f);
 
             GameObject cabBack = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabBack.name = "Cabinet_Back";
             cabBack.transform.SetParent(cabinetRoot.transform);
-            cabBack.transform.localPosition = new Vector3(0f, 1.0f, -0.22f);
-            cabBack.transform.localScale = new Vector3(1.6f, 2.0f, 0.05f);
+            cabBack.transform.localPosition = new Vector3(0f, 0.70f, -0.17f);
+            cabBack.transform.localScale = new Vector3(1.3f, 1.40f, 0.04f);
             cabBack.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject cabLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabLeft.name = "Cabinet_Left";
             cabLeft.transform.SetParent(cabinetRoot.transform);
-            cabLeft.transform.localPosition = new Vector3(-0.775f, 1.0f, 0f);
-            cabLeft.transform.localScale = new Vector3(0.05f, 2.0f, 0.49f);
+            cabLeft.transform.localPosition = new Vector3(-0.63f, 0.70f, 0f);
+            cabLeft.transform.localScale = new Vector3(0.04f, 1.40f, 0.38f);
             cabLeft.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject cabRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabRight.name = "Cabinet_Right";
             cabRight.transform.SetParent(cabinetRoot.transform);
-            cabRight.transform.localPosition = new Vector3(0.775f, 1.0f, 0f);
-            cabRight.transform.localScale = new Vector3(0.05f, 2.0f, 0.49f);
+            cabRight.transform.localPosition = new Vector3(0.63f, 0.70f, 0f);
+            cabRight.transform.localScale = new Vector3(0.04f, 1.40f, 0.38f);
             cabRight.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject cabTop = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabTop.name = "Cabinet_Top";
             cabTop.transform.SetParent(cabinetRoot.transform);
-            cabTop.transform.localPosition = new Vector3(0f, 1.975f, 0f);
-            cabTop.transform.localScale = new Vector3(1.6f, 0.05f, 0.49f);
+            cabTop.transform.localPosition = new Vector3(0f, 1.38f, 0f);
+            cabTop.transform.localScale = new Vector3(1.3f, 0.04f, 0.38f);
             cabTop.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject cabBottom = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabBottom.name = "Cabinet_Bottom";
             cabBottom.transform.SetParent(cabinetRoot.transform);
-            cabBottom.transform.localPosition = new Vector3(0f, 0.025f, 0f);
-            cabBottom.transform.localScale = new Vector3(1.6f, 0.05f, 0.49f);
+            cabBottom.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+            cabBottom.transform.localScale = new Vector3(1.3f, 0.04f, 0.38f);
             cabBottom.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject cabShelf1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabShelf1.name = "Shelf_1";
             cabShelf1.transform.SetParent(cabinetRoot.transform);
-            cabShelf1.transform.localPosition = new Vector3(0f, 0.65f, 0f);
-            cabShelf1.transform.localScale = new Vector3(1.5f, 0.04f, 0.45f);
+            cabShelf1.transform.localPosition = new Vector3(0f, 0.48f, 0f);
+            cabShelf1.transform.localScale = new Vector3(1.22f, 0.03f, 0.35f);
             cabShelf1.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject cabShelf2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cabShelf2.name = "Shelf_2";
             cabShelf2.transform.SetParent(cabinetRoot.transform);
-            cabShelf2.transform.localPosition = new Vector3(0f, 1.25f, 0f);
-            cabShelf2.transform.localScale = new Vector3(1.5f, 0.04f, 0.45f);
+            cabShelf2.transform.localPosition = new Vector3(0f, 0.92f, 0f);
+            cabShelf2.transform.localScale = new Vector3(1.22f, 0.03f, 0.35f);
             cabShelf2.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject leftDoorPivot = new GameObject("LeftDoor_Pivot");
             leftDoorPivot.transform.SetParent(cabinetRoot.transform);
-            leftDoorPivot.transform.localPosition = new Vector3(-0.76f, 0f, 0.25f);
+            leftDoorPivot.transform.localPosition = new Vector3(-0.62f, 0f, 0.19f);
 
             GameObject leftDoorLeaf = GameObject.CreatePrimitive(PrimitiveType.Cube);
             leftDoorLeaf.name = "LeftDoor_Leaf";
             leftDoorLeaf.transform.SetParent(leftDoorPivot.transform);
-            leftDoorLeaf.transform.localPosition = new Vector3(0.375f, 1.0f, 0f);
-            leftDoorLeaf.transform.localScale = new Vector3(0.75f, 1.92f, 0.04f);
+            leftDoorLeaf.transform.localPosition = new Vector3(0.30f, 0.70f, 0f);
+            leftDoorLeaf.transform.localScale = new Vector3(0.60f, 1.34f, 0.03f);
             leftDoorLeaf.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject leftDoorKnob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             leftDoorKnob.name = "Knob";
             leftDoorKnob.transform.SetParent(leftDoorLeaf.transform);
-            leftDoorKnob.transform.localPosition = new Vector3(0.42f, 0f, 0.55f);
-            leftDoorKnob.transform.localScale = new Vector3(0.08f, 0.08f, 0.08f);
+            leftDoorKnob.transform.localPosition = new Vector3(0.40f, 0f, 0.55f);
+            leftDoorKnob.transform.localScale = new Vector3(0.06f, 0.06f, 0.06f);
             leftDoorKnob.GetComponent<Renderer>().sharedMaterial = handleMat;
             Object.DestroyImmediate(leftDoorKnob.GetComponent<Collider>());
 
             GameObject rightDoorPivot = new GameObject("RightDoor_Pivot");
             rightDoorPivot.transform.SetParent(cabinetRoot.transform);
-            rightDoorPivot.transform.localPosition = new Vector3(0.76f, 0f, 0.25f);
+            rightDoorPivot.transform.localPosition = new Vector3(0.62f, 0f, 0.19f);
 
             GameObject rightDoorLeaf = GameObject.CreatePrimitive(PrimitiveType.Cube);
             rightDoorLeaf.name = "RightDoor_Leaf";
             rightDoorLeaf.transform.SetParent(rightDoorPivot.transform);
-            rightDoorLeaf.transform.localPosition = new Vector3(-0.375f, 1.0f, 0f);
-            rightDoorLeaf.transform.localScale = new Vector3(0.75f, 1.92f, 0.04f);
+            rightDoorLeaf.transform.localPosition = new Vector3(-0.30f, 0.70f, 0f);
+            rightDoorLeaf.transform.localScale = new Vector3(0.60f, 1.34f, 0.03f);
             rightDoorLeaf.GetComponent<Renderer>().sharedMaterial = woodMat;
 
             GameObject rightDoorKnob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             rightDoorKnob.name = "Knob";
             rightDoorKnob.transform.SetParent(rightDoorLeaf.transform);
-            rightDoorKnob.transform.localPosition = new Vector3(-0.42f, 0f, 0.55f);
-            rightDoorKnob.transform.localScale = new Vector3(0.08f, 0.08f, 0.08f);
+            rightDoorKnob.transform.localPosition = new Vector3(-0.40f, 0f, 0.55f);
+            rightDoorKnob.transform.localScale = new Vector3(0.06f, 0.06f, 0.06f);
             rightDoorKnob.GetComponent<Renderer>().sharedMaterial = handleMat;
             Object.DestroyImmediate(rightDoorKnob.GetComponent<Collider>());
 
             BoxCollider cabTrigger = cabinetRoot.AddComponent<BoxCollider>();
-            cabTrigger.size = new Vector3(1.8f, 2.1f, 1.2f);
-            cabTrigger.center = new Vector3(0f, 1.0f, 0.4f);
+            cabTrigger.size = new Vector3(1.5f, 1.5f, 1.0f);
+            cabTrigger.center = new Vector3(0f, 0.70f, 0.35f);
             cabTrigger.isTrigger = true;
 
             CabinetDoor cabDoorComp = cabinetRoot.AddComponent<CabinetDoor>();
@@ -447,95 +446,95 @@ namespace Task8_11
             cabDoorComp.rightDoor = rightDoorPivot.transform;
             cabDoorComp.isOpen = false;
 
-            float deskTopY = floorY + 0.77f;
-            float shelf1Y = floorY + 0.67f;
-            float shelf2Y = floorY + 1.27f;
-            float coffeeTableTopY = floorY + 0.46f;
-            float cabZ = rCenter.z - rLength * 0.5f + 0.4f;
+            float deskTopY = floorY + 0.54f;
+            float shelf1Y = floorY + 0.50f;
+            float shelf2Y = floorY + 0.94f;
+            float coffeeTableTopY = floorY + 0.32f;
+            float cabZ = rCenter.z - rLength * 0.5f + 0.32f;
 
             GameObject screenPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerScreen.fbx");
             if (screenPrefab != null)
             {
-                SpawnProp(screenPrefab, new Vector3(rCenter.x + 2.5f, deskTopY, rCenter.z + 2.1f), Quaternion.Euler(0f, -90f, 0f), 0.15f, "Screen", 0f, roomRoot.transform);
+                SpawnProp(screenPrefab, new Vector3(rCenter.x + 1.9f, deskTopY, rCenter.z + 1.6f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Screen", 0f, roomRoot.transform);
             }
 
             GameObject kbPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerKeyboard.fbx");
             if (kbPrefab != null)
             {
-                SpawnProp(kbPrefab, new Vector3(rCenter.x + 2.15f, deskTopY, rCenter.z + 2.1f), Quaternion.Euler(0f, -90f, 0f), 0.15f, "Keyboard", 0f, roomRoot.transform);
+                SpawnProp(kbPrefab, new Vector3(rCenter.x + 1.65f, deskTopY, rCenter.z + 1.6f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Keyboard", 0f, roomRoot.transform);
             }
 
             GameObject mousePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerMouse.fbx");
             if (mousePrefab != null)
             {
-                SpawnProp(mousePrefab, new Vector3(rCenter.x + 2.15f, deskTopY, rCenter.z + 1.85f), Quaternion.Euler(0f, -90f, 0f), 0.15f, "Mouse", 0f, roomRoot.transform);
+                SpawnProp(mousePrefab, new Vector3(rCenter.x + 1.65f, deskTopY, rCenter.z + 1.4f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Mouse", 0f, roomRoot.transform);
             }
 
             GameObject lampTablePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/lampSquareTable.fbx");
             if (lampTablePrefab != null)
             {
-                SpawnProp(lampTablePrefab, new Vector3(rCenter.x + 2.5f, deskTopY, rCenter.z + 1.4f), Quaternion.identity, 0.15f, "Lamp", 0f, roomRoot.transform);
+                SpawnProp(lampTablePrefab, new Vector3(rCenter.x + 1.9f, deskTopY, rCenter.z + 1.1f), Quaternion.identity, 0.11f, "Lamp", 0f, roomRoot.transform);
             }
 
             GameObject laptopPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/laptop.fbx");
             if (laptopPrefab != null)
             {
-                SpawnPickup(laptopPrefab, new Vector3(rCenter.x + 1.9f, deskTopY, rCenter.z + 2.5f), Quaternion.Euler(0f, -60f, 0f), 0.06f, "Ноутбук", 1.5f, roomRoot.transform);
+                SpawnPickup(laptopPrefab, new Vector3(rCenter.x + 1.45f, deskTopY, rCenter.z + 1.9f), Quaternion.Euler(0f, -60f, 0f), 0.045f, "Ноутбук", 1.5f, roomRoot.transform);
             }
 
             GameObject booksPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/books.fbx");
             if (booksPrefab != null)
             {
-                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 2.45f, deskTopY, rCenter.z + 2.6f), Quaternion.identity, 0.24f, "Книги на столе", 1.0f, roomRoot.transform);
-                SpawnPickup(booksPrefab, new Vector3(rCenter.x - 0.35f, shelf2Y, cabZ), Quaternion.identity, 0.22f, "Книги в шкафу (верх)", 0.8f, roomRoot.transform, cabDoorComp);
-                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 0.35f, shelf2Y, cabZ), Quaternion.identity, 0.22f, "Книги в шкафу (верх 2)", 0.8f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 1.85f, deskTopY, rCenter.z + 2.0f), Quaternion.identity, 0.18f, "Книги на столе", 1.0f, roomRoot.transform);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x - 0.28f, shelf2Y, cabZ), Quaternion.identity, 0.16f, "Книги в шкафу (верх)", 0.8f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 0.28f, shelf2Y, cabZ), Quaternion.identity, 0.16f, "Книги в шкафу (верх 2)", 0.8f, roomRoot.transform, cabDoorComp);
             }
 
             GameObject plant2Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/plantSmall2.fbx");
             if (plant2Prefab != null)
             {
-                SpawnPickup(plant2Prefab, new Vector3(rCenter.x - 0.35f, shelf1Y, cabZ), Quaternion.identity, 0.12f, "Цветок в шкафу", 0.9f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(plant2Prefab, new Vector3(rCenter.x - 0.28f, shelf1Y, cabZ), Quaternion.identity, 0.09f, "Цветок в шкафу", 0.9f, roomRoot.transform, cabDoorComp);
             }
 
             GameObject boxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/cardboardBoxClosed.fbx");
             if (boxPrefab != null)
             {
-                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 0.35f, shelf1Y, cabZ), Quaternion.identity, 0.15f, "Коробка в шкафу", 1.2f, roomRoot.transform, cabDoorComp);
-                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 2.4f, floorY, rCenter.z - 1.5f), Quaternion.Euler(0f, 25f, 0f), 0.22f, "Большая коробка", 2.2f, roomRoot.transform);
+                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 0.28f, shelf1Y, cabZ), Quaternion.identity, 0.11f, "Коробка в шкафу", 1.2f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 1.8f, floorY, rCenter.z - 1.2f), Quaternion.Euler(0f, 25f, 0f), 0.16f, "Большая коробка", 2.2f, roomRoot.transform);
             }
 
             GameObject radioPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/radio.fbx");
             if (radioPrefab != null)
             {
-                SpawnPickup(radioPrefab, new Vector3(rCenter.x - 0.6f, coffeeTableTopY, rCenter.z + 1.5f), Quaternion.identity, 0.10f, "Радиоприемник", 1.1f, roomRoot.transform);
+                SpawnPickup(radioPrefab, new Vector3(rCenter.x - 0.45f, coffeeTableTopY, rCenter.z + 1.1f), Quaternion.identity, 0.08f, "Радиоприемник", 1.1f, roomRoot.transform);
             }
 
             GameObject plant1Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/plantSmall1.fbx");
             if (plant1Prefab != null)
             {
-                SpawnPickup(plant1Prefab, new Vector3(rCenter.x - 1.0f, coffeeTableTopY, rCenter.z + 1.5f), Quaternion.identity, 0.12f, "Цветок на столике", 1.0f, roomRoot.transform);
+                SpawnPickup(plant1Prefab, new Vector3(rCenter.x - 0.75f, coffeeTableTopY, rCenter.z + 1.1f), Quaternion.identity, 0.09f, "Цветок на столике", 1.0f, roomRoot.transform);
             }
 
             GameObject bearPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/bear.fbx");
             if (bearPrefab != null)
             {
-                SpawnPickup(bearPrefab, new Vector3(rCenter.x - 1.8f, floorY + 0.45f, rCenter.z + 1.5f), Quaternion.Euler(0f, 90f, 0f), 0.10f, "Плюшевый мишка", 0.7f, roomRoot.transform);
+                SpawnPickup(bearPrefab, new Vector3(rCenter.x - 1.35f, floorY + 0.32f, rCenter.z + 1.1f), Quaternion.Euler(0f, 90f, 0f), 0.08f, "Плюшевый мишка", 0.7f, roomRoot.transform);
             }
 
             GameObject trashPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/trashcan.fbx");
             if (trashPrefab != null)
             {
-                SpawnPickup(trashPrefab, new Vector3(rCenter.x + 2.5f, floorY, rCenter.z + 0.9f), Quaternion.identity, 0.05f, "Корзина для бумаг", 1.0f, roomRoot.transform);
+                SpawnPickup(trashPrefab, new Vector3(rCenter.x + 1.9f, floorY, rCenter.z + 0.7f), Quaternion.identity, 0.04f, "Корзина для бумаг", 1.0f, roomRoot.transform);
             }
 
             GameObject cityPortalObj = new GameObject("Portal_City_To_Room");
-            cityPortalObj.transform.position = new Vector3(-8.5f, 0.02f, -3.5f);
+            cityPortalObj.transform.position = new Vector3(-14.5f, 0.03f, -3.98f);
 
             GameObject cityPortalDisk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             cityPortalDisk.name = "Blue_Glowing_Zone";
             cityPortalDisk.transform.SetParent(cityPortalObj.transform);
             cityPortalDisk.transform.localPosition = Vector3.zero;
-            cityPortalDisk.transform.localScale = new Vector3(1.8f, 0.02f, 1.8f);
+            cityPortalDisk.transform.localScale = new Vector3(2.2f, 0.02f, 2.2f);
             cityPortalDisk.GetComponent<Renderer>().sharedMaterial = portalMat;
             Object.DestroyImmediate(cityPortalDisk.GetComponent<Collider>());
 
@@ -549,12 +548,12 @@ namespace Task8_11
             cityLight.color = new Color(0.1f, 0.7f, 1.0f);
 
             SphereCollider cityTrigger = cityPortalObj.AddComponent<SphereCollider>();
-            cityTrigger.radius = 1.0f;
+            cityTrigger.radius = 1.1f;
             cityTrigger.isTrigger = true;
 
             GameObject roomSpawnPoint = new GameObject("SpawnPoint_Room");
             roomSpawnPoint.transform.SetParent(roomRoot.transform);
-            roomSpawnPoint.transform.position = new Vector3(rCenter.x - 0.8f, floorY + 0.2f, rCenter.z);
+            roomSpawnPoint.transform.position = new Vector3(rCenter.x - 0.6f, floorY + 0.15f, rCenter.z);
             roomSpawnPoint.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
 
             TeleportZone cityPortalComp = cityPortalObj.AddComponent<TeleportZone>();
@@ -564,13 +563,13 @@ namespace Task8_11
 
             GameObject roomPortalObj = new GameObject("Portal_Room_To_City");
             roomPortalObj.transform.SetParent(roomRoot.transform);
-            roomPortalObj.transform.position = new Vector3(rCenter.x - 2.8f, floorY + 0.02f, rCenter.z);
+            roomPortalObj.transform.position = new Vector3(rCenter.x - 2.1f, floorY + 0.03f, rCenter.z);
 
             GameObject roomPortalDisk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             roomPortalDisk.name = "Blue_Glowing_Zone";
             roomPortalDisk.transform.SetParent(roomPortalObj.transform);
             roomPortalDisk.transform.localPosition = Vector3.zero;
-            roomPortalDisk.transform.localScale = new Vector3(1.6f, 0.02f, 1.6f);
+            roomPortalDisk.transform.localScale = new Vector3(1.5f, 0.02f, 1.5f);
             roomPortalDisk.GetComponent<Renderer>().sharedMaterial = portalMat;
             Object.DestroyImmediate(roomPortalDisk.GetComponent<Collider>());
 
@@ -579,17 +578,17 @@ namespace Task8_11
             roomLightObj.transform.localPosition = new Vector3(0f, 0.4f, 0f);
             Light roomLight = roomLightObj.AddComponent<Light>();
             roomLight.type = LightType.Point;
-            roomLight.range = 3.0f;
+            roomLight.range = 2.8f;
             roomLight.intensity = 2.0f;
             roomLight.color = new Color(0.1f, 0.7f, 1.0f);
 
             SphereCollider roomTrigger = roomPortalObj.AddComponent<SphereCollider>();
-            roomTrigger.radius = 0.9f;
+            roomTrigger.radius = 0.85f;
             roomTrigger.isTrigger = true;
 
             GameObject citySpawnPoint = new GameObject("SpawnPoint_City");
-            citySpawnPoint.transform.position = new Vector3(-7.2f, 0.5f, -3.5f);
-            citySpawnPoint.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            citySpawnPoint.transform.position = new Vector3(-15.6f, 0.2f, -3.98f);
+            citySpawnPoint.transform.rotation = Quaternion.Euler(0f, 270f, 0f);
 
             TeleportZone roomPortalComp = roomPortalObj.AddComponent<TeleportZone>();
             roomPortalComp.targetPoint = citySpawnPoint.transform;
