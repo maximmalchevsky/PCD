@@ -7,7 +7,8 @@ namespace Task8_11
         public Light[] targetLights;
         public Transform toggleLever;
         public bool isOn = true;
-        public float leverAngle = 25f;
+        public string switchName = "свет";
+        public KeyCode hotkey = KeyCode.None;
 
         private Quaternion onRot;
         private Quaternion offRot;
@@ -21,6 +22,14 @@ namespace Task8_11
                 toggleLever.localRotation = isOn ? onRot : offRot;
             }
             ApplyLighting();
+        }
+
+        void Update()
+        {
+            if (hotkey != KeyCode.None && Input.GetKeyDown(hotkey))
+            {
+                Toggle();
+            }
         }
 
         public void Toggle()

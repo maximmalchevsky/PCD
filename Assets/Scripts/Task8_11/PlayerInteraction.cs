@@ -193,8 +193,9 @@ namespace Task8_11
 
             if (bestSwitch != null)
             {
-                currentPrompt = bestSwitch.isOn ? "[E] Выключить свет" : "[E] Включить свет";
-                if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
+                string keyHint = bestSwitch.hotkey != KeyCode.None ? "[E / " + bestSwitch.hotkey + "]" : "[E]";
+                currentPrompt = bestSwitch.isOn ? keyHint + " Выключить " + bestSwitch.switchName : keyHint + " Включить " + bestSwitch.switchName;
+                if (Input.GetKeyDown(KeyCode.E) || (bestSwitch.hotkey != KeyCode.None && Input.GetKeyDown(bestSwitch.hotkey)) || Input.GetMouseButtonDown(0))
                 {
                     bestSwitch.Toggle();
                 }
