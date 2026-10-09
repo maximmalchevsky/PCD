@@ -41,6 +41,8 @@ namespace Task4_5
 
         void Update()
         {
+            if (controller == null || !controller.enabled) return;
+
             if (cameraTransform == null || playerCamera == null)
             {
                 FindCamera();
