@@ -13,46 +13,18 @@ namespace Task8_11
 
         static RoomBuilder()
         {
-            EditorApplication.delayCall += TriggerBuild;
-            EditorApplication.update += CheckAndBuildIfNeeded;
-            EditorApplication.playModeStateChanged += OnPlayModeChanged;
         }
 
         private static void OnPlayModeChanged(PlayModeStateChange state)
         {
-            TriggerBuild();
         }
 
         private static void TriggerBuild()
         {
-            EditorApplication.delayCall += () =>
-            {
-                CheckAndBuildIfNeeded();
-            };
         }
 
         private static void CheckAndBuildIfNeeded()
         {
-            if (isBuilding) return;
-            GameObject sentinel = GameObject.Find("Room_Build_v7");
-            if (sentinel == null)
-            {
-                isBuilding = true;
-                try
-                {
-                    Scene scene = EditorSceneManager.GetActiveScene();
-                    BuildRoomAndPortals(scene);
-                    if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
-                    {
-                        EditorSceneManager.MarkSceneDirty(scene);
-                        EditorSceneManager.SaveScene(scene);
-                    }
-                }
-                finally
-                {
-                    isBuilding = false;
-                }
-            }
         }
 
         [MenuItem("City/Build Interior Room (Tasks 8-11)")]

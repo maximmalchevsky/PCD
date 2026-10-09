@@ -7,6 +7,7 @@ namespace Task8_11
         public Light[] targetLights;
         public Transform toggleLever;
         public bool isOn = true;
+        public float leverAngle = 25f;
         public string switchName = "свет";
         public KeyCode hotkey = KeyCode.None;
 
