@@ -10,7 +10,6 @@ namespace Task8_11
     {
         public Camera playerCamera;
         public float interactDistance = 4.5f;
-        public float pushPower = 2.5f;
         public float throwForce = 7.5f;
 
         private PickupableItem heldItem = null;
@@ -47,13 +46,6 @@ namespace Task8_11
             holdPoint = hp.transform;
 
             SetupRoomProps();
-            UnstickRoomProps();
-            CreateRoomBarriers();
-        }
-
-        void FixedUpdate()
-        {
-            EnforceRoomBoundaries();
         }
 
         void Update()
@@ -109,7 +101,7 @@ namespace Task8_11
             RaycastHit[] directHits = Physics.RaycastAll(ray, interactDistance);
             if (directHits != null) hitsList.AddRange(directHits);
 
-            RaycastHit[] sphereHits = Physics.SphereCastAll(ray, 0.20f, interactDistance);
+            RaycastHit[] sphereHits = Physics.SphereCastAll(ray, 0.18f, interactDistance);
             if (sphereHits != null)
             {
                 for (int s = 0; s < sphereHits.Length; s++)
@@ -145,7 +137,6 @@ namespace Task8_11
                 RaycastHit h = hitsList[i];
                 if (h.collider == null || h.collider.isTrigger) continue;
                 if (h.collider == playerCol || h.collider == cc) continue;
-                if (h.transform.name.StartsWith("Boundary_Barrier_")) continue;
 
                 PickupableItem item = h.collider.GetComponentInParent<PickupableItem>();
                 if (item == null) item = h.collider.GetComponentInChildren<PickupableItem>();
@@ -324,11 +315,7 @@ namespace Task8_11
             float holdDist = heldItem.rb.mass > 10f ? 1.4f : 0.85f;
             Vector3 targetPos = playerCamera.transform.position + playerCamera.transform.forward * holdDist + playerCamera.transform.up * -0.15f;
 
-            targetPos.x = Mathf.Clamp(targetPos.x, 297.45f, 302.55f);
-            targetPos.z = Mathf.Clamp(targetPos.z, 297.45f, 302.55f);
-            targetPos.y = Mathf.Clamp(targetPos.y, -49.95f, -47.95f);
-
-            heldItem.rb.linearVelocity = (targetPos - heldItem.transform.position) * 14f;
+            heldItem.rb.linearVelocity = (targetPos - heldItem.transform.position) * 12f;
             heldItem.transform.rotation = Quaternion.Slerp(heldItem.transform.rotation, playerCamera.transform.rotation, Time.deltaTime * 10f);
 
             if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
@@ -355,7 +342,13 @@ namespace Task8_11
             if (heldItem.rb != null)
             {
                 heldItem.rb.useGravity = true;
-                heldItem.rb.linearVelocity = Vector3.down * 0.4f;
+                heldItem.rb.linearVelocity = Vector3.down * 0.5f;
+
+                if (heldItem.name.Contains("Chair") || heldItem.name.Contains("Desk") || heldItem.name.Contains("Table") || heldItem.name.Contains("Sofa"))
+                {
+                    heldItem.rb.linearDamping = 8f;
+                    heldItem.rb.angularDamping = 8f;
+                }
             }
             heldItem = null;
         }
@@ -383,103 +376,6 @@ namespace Task8_11
         {
             warningMessage = msg;
             warningTimer = 2.5f;
-        }
-
-        void OnControllerColliderHit(ControllerColliderHit hit)
-        {
-            Rigidbody body = hit.collider.attachedRigidbody;
-            if (body == null || body.isKinematic) return;
-            if (hit.moveDirection.y < -0.3f) return;
-            if (heldItem != null && body == heldItem.rb) return;
-
-            Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z).normalized;
-            if ((body.position.x > 302.4f && pushDir.x > 0f) || (body.position.x < 297.6f && pushDir.x < 0f)) pushDir.x = 0f;
-            if ((body.position.z > 302.4f && pushDir.z > 0f) || (body.position.z < 297.6f && pushDir.z < 0f)) pushDir.z = 0f;
-
-            body.linearVelocity = new Vector3(pushDir.x * 1.8f, body.linearVelocity.y, pushDir.z * 1.8f);
-        }
-
-        private void EnforceRoomBoundaries()
-        {
-            var rbs = Object.FindObjectsByType<Rigidbody>(FindObjectsSortMode.None);
-            for (int i = 0; i < rbs.Length; i++)
-            {
-                Rigidbody r = rbs[i];
-                if (r == null || r.isKinematic) continue;
-
-                Vector3 p = r.position;
-                if (p.x > 294f && p.x < 306f && p.z > 294f && p.z < 306f && p.y > -52f && p.y < -45f)
-                {
-                    float cX = Mathf.Clamp(p.x, 297.45f, 302.55f);
-                    float cZ = Mathf.Clamp(p.z, 297.45f, 302.55f);
-                    float cY = Mathf.Clamp(p.y, -49.98f, -47.95f);
-
-                    if (p.x != cX || p.z != cZ || p.y != cY)
-                    {
-                        r.position = new Vector3(cX, cY, cZ);
-                        Vector3 v = r.linearVelocity;
-                        if ((p.x > 302.55f && v.x > 0f) || (p.x < 297.45f && v.x < 0f)) v.x = -v.x * 0.2f;
-                        if ((p.z > 302.55f && v.z > 0f) || (p.z < 297.45f && v.z < 0f)) v.z = -v.z * 0.2f;
-                        if (p.y > -47.95f && v.y > 0f) v.y = -0.5f;
-                        if (p.y < -49.98f && v.y < 0f) v.y = 0f;
-                        r.linearVelocity = v;
-                    }
-                }
-            }
-        }
-
-        private void UnstickRoomProps()
-        {
-            var rbs = Object.FindObjectsByType<Rigidbody>(FindObjectsSortMode.None);
-            for (int i = 0; i < rbs.Length; i++)
-            {
-                Rigidbody r = rbs[i];
-                if (r == null) continue;
-
-                Vector3 p = r.position;
-                if (p.x > 294f && p.x < 306f && p.z > 294f && p.z < 306f && p.y > -52f && p.y < -45f)
-                {
-                    bool outOfBounds = p.x > 302.48f || p.x < 297.52f || p.z > 302.48f || p.z < 297.52f || p.y < -50.05f || p.y > -47.75f;
-                    if (outOfBounds)
-                    {
-                        if (r.name.Contains("books") || r.name.Contains("Books"))
-                        {
-                            r.position = new Vector3(301.2f, -49.44f, 301.55f);
-                            r.linearVelocity = Vector3.zero;
-                        }
-                        else if (r.name.StartsWith("Paper_"))
-                        {
-                            r.position = new Vector3(301.4f, -49.44f, 301.45f);
-                            r.linearVelocity = Vector3.zero;
-                        }
-                        else
-                        {
-                            r.position = new Vector3(Mathf.Clamp(p.x, 297.8f, 302.2f), Mathf.Clamp(p.y, -49.95f, -48.2f), Mathf.Clamp(p.z, 297.8f, 302.2f));
-                            r.linearVelocity = Vector3.zero;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void CreateRoomBarriers()
-        {
-            if (GameObject.Find("Boundary_Barrier_Right") != null) return;
-
-            CreateSingleBarrier("Boundary_Barrier_Right", new Vector3(304.1f, -48.9f, 300f), new Vector3(2.5f, 5f, 12f));
-            CreateSingleBarrier("Boundary_Barrier_Left", new Vector3(295.9f, -48.9f, 300f), new Vector3(2.5f, 5f, 12f));
-            CreateSingleBarrier("Boundary_Barrier_Back", new Vector3(300f, -48.9f, 304.1f), new Vector3(12f, 5f, 2.5f));
-            CreateSingleBarrier("Boundary_Barrier_Front", new Vector3(300f, -48.9f, 295.9f), new Vector3(12f, 5f, 2.5f));
-            CreateSingleBarrier("Boundary_Barrier_Ceil", new Vector3(300f, -46.5f, 300f), new Vector3(12f, 2.5f, 12f));
-            CreateSingleBarrier("Boundary_Barrier_Floor", new Vector3(300f, -51.3f, 300f), new Vector3(12f, 2.5f, 12f));
-        }
-
-        private void CreateSingleBarrier(string name, Vector3 pos, Vector3 size)
-        {
-            GameObject obj = new GameObject(name);
-            obj.transform.position = pos;
-            BoxCollider col = obj.AddComponent<BoxCollider>();
-            col.size = size;
         }
 
         void OnGUI()
@@ -531,10 +427,9 @@ namespace Task8_11
                                   "• [T] — Включить / выключить вентилятор\n" +
                                   "• [J] — Открыть / закрыть жалюзи на окне\n" +
                                   "• [L] — Выключатель света\n" +
-                                  "• Столы и стулья можно двигать и брать в руки\n" +
                                   "• [H] — Скрыть / показать эту подсказку";
 
-                GUI.Box(new Rect(15f, 15f, 340f, 185f), helpText, helpStyle);
+                GUI.Box(new Rect(15f, 15f, 340f, 170f), helpText, helpStyle);
             }
         }
 
@@ -551,35 +446,11 @@ namespace Task8_11
 
             GameObject roomRoot = GameObject.Find("--- INTERIOR ROOM (TASKS 8-11) ---");
             if (roomRoot == null) roomRoot = GameObject.Find("Room_Root");
-            if (roomRoot == null) roomRoot = GameObject.Find("Interior_Room");
+            if (roomRoot == null) return;
 
-            List<Transform> targetList = new List<Transform>();
-            if (roomRoot != null)
+            for (int c = 0; c < roomRoot.transform.childCount; c++)
             {
-                for (int c = 0; c < roomRoot.transform.childCount; c++)
-                {
-                    targetList.Add(roomRoot.transform.GetChild(c));
-                }
-            }
-            else
-            {
-                var trs = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None);
-                for (int t = 0; t < trs.Length; t++)
-                {
-                    Vector3 pos = trs[t].position;
-                    if (pos.x > 296f && pos.x < 304f && pos.z > 296f && pos.z < 304f && pos.y > -51f && pos.y < -46f)
-                    {
-                        if (trs[t].parent == null || trs[t].parent.name.Contains("INTERIOR") || trs[t].parent.name.Contains("Room"))
-                        {
-                            targetList.Add(trs[t]);
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < targetList.Count; i++)
-            {
-                Transform t = targetList[i];
+                Transform t = roomRoot.transform.GetChild(c);
                 string n = t.name;
 
                 if (n.StartsWith("Paper_"))
@@ -598,95 +469,81 @@ namespace Task8_11
                     continue;
                 }
 
-                if (n.StartsWith("Room_Floor") || n.StartsWith("Room_Ceiling") || n.StartsWith("Room_Wall") ||
-                    n.StartsWith("Room_Window") || n.StartsWith("Room_Doorway") || n.StartsWith("Window_") ||
-                    n.StartsWith("Wall_") || n.StartsWith("Door_") || n.StartsWith("Portal_") ||
-                    n.StartsWith("SpawnPoint_") || n.StartsWith("Light_") || n.StartsWith("Floor_Lamp_Light") ||
-                    n.StartsWith("Desk_Lamp_Light") || n.StartsWith("Switch_Plate") || n.StartsWith("Switch_Lever") ||
-                    n.StartsWith("Wall_Switch") || n.StartsWith("Ceiling_Fan") || n.StartsWith("Fan_") ||
-                    n.StartsWith("Blade_") || n.StartsWith("Cabinet_Back") || n.StartsWith("Cabinet_Left") ||
-                    n.StartsWith("Cabinet_Right") || n.StartsWith("Cabinet_Top") || n.StartsWith("Cabinet_Bottom") ||
+                if (n.StartsWith("Room_") || n.StartsWith("Wall_") || n.StartsWith("Door_") ||
+                    n.StartsWith("Entrance_") || n.StartsWith("Portal_") || n.StartsWith("SpawnPoint_") ||
+                    n.StartsWith("Light_") || n.StartsWith("Window_") || n.StartsWith("Floor_Lamp_Light") ||
+                    n.StartsWith("Desk_Lamp_Light") || n.StartsWith("Switch_") || n.StartsWith("Ceiling_Fan") ||
+                    n.StartsWith("Fan_") || n.StartsWith("Blade_") || n.StartsWith("Cabinet_") ||
                     n.StartsWith("Shelf_") || n.StartsWith("LeftDoor_") || n.StartsWith("RightDoor_") ||
-                    n.StartsWith("Cabinet_With_Doors") || n.StartsWith("Knob") || n.StartsWith("Boundary_Barrier_") ||
-                    n.StartsWith("Entrance_DoorFrame") || n.StartsWith("Room_Build"))
+                    n.StartsWith("Knob"))
                 {
                     continue;
                 }
 
-                BoxCollider bc = t.GetComponent<BoxCollider>();
-                if (bc == null)
+                if (n.Contains("Sofa") || n.Contains("TV_Cabinet") || n.Contains("Desk") ||
+                    n.Contains("Table_Coffee") || n.Contains("Coffee_Station_Table") ||
+                    n.Contains("Bookcase") || n.Contains("Fridge") || n.Contains("Coat_Rack"))
                 {
-                    Renderer[] rends = t.GetComponentsInChildren<Renderer>();
-                    if (rends.Length > 0)
+                    Rigidbody srb = t.GetComponent<Rigidbody>();
+                    if (srb != null)
                     {
-                        Bounds b = rends[0].bounds;
-                        for (int r = 1; r < rends.Length; r++)
-                        {
-                            b.Encapsulate(rends[r].bounds);
-                        }
-
-                        bc = t.gameObject.AddComponent<BoxCollider>();
-                        bc.center = t.InverseTransformPoint(b.center);
-                        bc.size = new Vector3(
-                            Mathf.Abs(t.lossyScale.x) > 0.001f ? b.size.x / Mathf.Abs(t.lossyScale.x) : b.size.x,
-                            Mathf.Abs(t.lossyScale.y) > 0.001f ? b.size.y / Mathf.Abs(t.lossyScale.y) : b.size.y,
-                            Mathf.Abs(t.lossyScale.z) > 0.001f ? b.size.z / Mathf.Abs(t.lossyScale.z) : b.size.z
-                        );
-                        bc.size = new Vector3(Mathf.Max(bc.size.x, 0.15f), Mathf.Max(bc.size.y, 0.15f), Mathf.Max(bc.size.z, 0.15f));
+                        srb.isKinematic = true;
                     }
+                    continue;
                 }
 
-                Rigidbody rb = t.GetComponent<Rigidbody>();
-                if (rb == null)
+                if (n.Contains("Chair"))
                 {
-                    rb = t.gameObject.AddComponent<Rigidbody>();
+                    Rigidbody crb = t.GetComponent<Rigidbody>();
+                    if (crb == null) crb = t.gameObject.AddComponent<Rigidbody>();
+                    crb.isKinematic = true;
+                    crb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+                    PickupableItem cItem = t.GetComponent<PickupableItem>();
+                    if (cItem == null) cItem = t.gameObject.AddComponent<PickupableItem>();
+                    cItem.itemName = n.Contains("Office") ? "Офисное кресло" : "Стул";
+                    cItem.rb = crb;
+                    continue;
                 }
-                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
-                string displayName = GetFriendlyPropName(n);
-                float mass = GetAppropriateMass(n);
-                rb.mass = mass;
-                rb.linearDamping = 0.5f;
-                rb.angularDamping = 1.0f;
-
-                if (n.Contains("Chair") || n.Contains("Table") || n.Contains("Desk") || n.Contains("TV") ||
-                    n.Contains("Sofa") || n.Contains("Bookcase") || n.Contains("Fridge") || n.Contains("Coat") ||
-                    n.Contains("Monitor") || n.Contains("Speaker"))
+                if (n.StartsWith("Item_") || n.Contains("Lamp") || n.Contains("Monitor") ||
+                    n.Contains("Keyboard") || n.Contains("Mouse") || n.Contains("Pillow") ||
+                    n.Contains("Speaker") || n.Contains("Coffee_Machine") || n.Contains("TV_Modern"))
                 {
-                    rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-                }
+                    Rigidbody prb = t.GetComponent<Rigidbody>();
+                    if (prb == null) prb = t.gameObject.AddComponent<Rigidbody>();
+                    prb.mass = GetAppropriateMass(n);
+                    prb.linearDamping = 3f;
+                    prb.angularDamping = 3f;
 
-                PickupableItem pItem = t.GetComponent<PickupableItem>();
-                if (pItem == null) pItem = t.gameObject.AddComponent<PickupableItem>();
-                pItem.itemName = displayName;
-                pItem.rb = rb;
+                    if (n.Contains("TV") || n.Contains("Monitor") || n.Contains("Speaker"))
+                    {
+                        prb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+                    }
+
+                    PickupableItem pItem = t.GetComponent<PickupableItem>();
+                    if (pItem == null) pItem = t.gameObject.AddComponent<PickupableItem>();
+                    pItem.itemName = GetFriendlyPropName(n);
+                    pItem.rb = prb;
+                }
             }
         }
 
         private string GetFriendlyPropName(string n)
         {
             if (n.Contains("Chair_Office") || n.Contains("chairDesk")) return "Офисное кресло";
-            if (n.Contains("Chair_Side") || n.Contains("Chair")) return "Стул";
+            if (n.Contains("Chair")) return "Стул";
             if (n.Contains("Monitor")) return "Монитор";
             if (n.Contains("Keyboard")) return "Клавиатура";
             if (n.Contains("Mouse")) return "Мышь";
             if (n.Contains("Lamp_Floor")) return "Торшер";
             if (n.Contains("Lamp")) return "Настольная лампа";
             if (n.Contains("TV_Modern")) return "Телевизор";
-            if (n.Contains("TV_Cabinet")) return "Тумба под ТВ";
             if (n.Contains("Speaker_Left")) return "Левая колонка";
             if (n.Contains("Speaker_Right")) return "Правая колонка";
-            if (n.Contains("Table_Coffee")) return "Журнальный столик";
-            if (n.Contains("Desk")) return "Письменный стол";
-            if (n.Contains("Sofa")) return "Диван";
             if (n.Contains("Pillow_Blue")) return "Синяя подушка";
             if (n.Contains("Pillow")) return "Подушка";
             if (n.Contains("Coffee_Machine")) return "Кофемашина";
-            if (n.Contains("Coffee_Station_Table") || n.Contains("sideTableDrawers")) return "Тумба для кофе";
-            if (n.Contains("Fridge")) return "Холодильник";
-            if (n.Contains("Bookcase")) return "Стеллаж";
-            if (n.Contains("Coat_Rack") || n.Contains("coatRack")) return "Вешалка";
-            if (n.Contains("Potted_Plant") || n.Contains("pottedPlant")) return "Растение в горшке";
             if (n.Contains("Item_radio") || n.Contains("radio")) return "Радиоприемник";
             if (n.Contains("Item_laptop") || n.Contains("laptop")) return "Ноутбук";
             if (n.Contains("Item_bear") || n.Contains("bear")) return "Плюшевый мишка";
@@ -706,25 +563,14 @@ namespace Task8_11
             if (n.Contains("Lamp")) return 1.5f;
             if (n.Contains("Monitor")) return 3.0f;
             if (n.Contains("Speaker")) return 2.0f;
-            if (n.Contains("Chair_Office")) return 12f;
-            if (n.Contains("Chair")) return 9f;
             if (n.Contains("TV_Modern")) return 7f;
-            if (n.Contains("Table_Coffee")) return 14f;
             if (n.Contains("Coffee_Machine")) return 4.0f;
-            if (n.Contains("Coffee_Station_Table")) return 12f;
-            if (n.Contains("Potted_Plant")) return 5f;
-            if (n.Contains("Coat_Rack")) return 4f;
-            if (n.Contains("Desk")) return 25f;
-            if (n.Contains("TV_Cabinet")) return 18f;
-            if (n.Contains("Sofa")) return 26f;
-            if (n.Contains("Fridge")) return 16f;
-            if (n.Contains("Bookcase")) return 18f;
             if (n.Contains("Item_radio") || n.Contains("radio")) return 1.2f;
             if (n.Contains("Item_laptop") || n.Contains("laptop")) return 2.2f;
             if (n.Contains("Item_bear") || n.Contains("bear")) return 0.6f;
             if (n.Contains("Item_trashcan") || n.Contains("trashcan")) return 0.8f;
             if (n.Contains("Item_books") || n.Contains("books")) return 1.0f;
-            return 3f;
+            return 2f;
         }
     }
 }
