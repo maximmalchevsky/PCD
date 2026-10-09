@@ -883,15 +883,9 @@ namespace Task8_11
             paper.transform.SetParent(parent);
             paper.transform.position = pos;
             paper.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            paper.transform.localScale = new Vector3(0.21f, 0.003f, 0.297f);
             paper.GetComponent<Renderer>().sharedMaterial = mat;
 
-            Rigidbody rb = paper.AddComponent<Rigidbody>();
-            rb.mass = 0.025f;
-            rb.linearDamping = 1.8f;
-            rb.angularDamping = 2.5f;
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
+            paper.AddComponent<PaperSheet>();
             PickupableItem item = paper.AddComponent<PickupableItem>();
             item.itemName = docName;
         }

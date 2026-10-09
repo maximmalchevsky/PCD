@@ -41,28 +41,31 @@ namespace Task8_11
                     }
                     outward.Normalize();
 
-                    Vector3 windDir = outward * 0.90f + Vector3.down * 0.40f;
+                    float dist = toBody.magnitude;
+                    float prox = 1f - Mathf.Clamp01(dist / windRadius);
 
-                    float actualForce = Mathf.Min(windForce, rb.mass * 12f);
-                    rb.AddForce(windDir.normalized * actualForce, ForceMode.Force);
+                    Vector3 swirl = Vector3.Cross(Vector3.up, outward).normalized;
+                    Vector3 updraft = Vector3.up * Random.Range(1.0f, 2.2f);
+                    Vector3 windDir = outward * 2.0f + updraft + swirl * 0.7f;
 
-                    Vector3 torqueDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-0.3f, 0.3f), Random.Range(-1f, 1f));
-                    rb.AddTorque(torqueDir * (actualForce * 0.25f), ForceMode.Force);
+                    float blastForce = Mathf.Max(0.8f, rb.mass * 35f) * prox;
+                    rb.AddForce(windDir.normalized * blastForce, ForceMode.Force);
 
-                    if (rb.linearVelocity.y > 0.1f)
+                    Vector3 torqueDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-0.5f, 0.5f), Random.Range(-1f, 1f));
+                    rb.AddTorque(torqueDir * (blastForce * 0.15f), ForceMode.Force);
+
+                    if (rb.linearVelocity.magnitude > 3.5f)
                     {
-                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0.1f, rb.linearVelocity.z);
+                        rb.linearVelocity = rb.linearVelocity.normalized * 3.5f;
                     }
 
-                    if (rb.linearVelocity.magnitude > 2.2f)
+                    if (rb.position.y > origin.y - 0.35f)
                     {
-                        rb.linearVelocity = rb.linearVelocity.normalized * 2.2f;
-                    }
-
-                    if (rb.position.y > origin.y - 0.45f)
-                    {
-                        rb.position = new Vector3(rb.position.x, origin.y - 0.45f, rb.position.z);
-                        rb.linearVelocity = new Vector3(rb.linearVelocity.x, -0.5f, rb.linearVelocity.z);
+                        rb.position = new Vector3(rb.position.x, origin.y - 0.35f, rb.position.z);
+                        if (rb.linearVelocity.y > 0f)
+                        {
+                            rb.linearVelocity = new Vector3(rb.linearVelocity.x, -0.6f, rb.linearVelocity.z);
+                        }
                     }
                 }
             }
