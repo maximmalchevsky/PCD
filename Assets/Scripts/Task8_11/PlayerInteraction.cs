@@ -8,7 +8,7 @@ namespace Task8_11
     public class PlayerInteraction : MonoBehaviour
     {
         public Camera playerCamera;
-        public float interactDistance = 2.8f;
+        public float interactDistance = 4.5f;
         public float pushPower = 2.5f;
         public float throwForce = 7.5f;
 
@@ -32,6 +32,8 @@ namespace Task8_11
 
         void Start()
         {
+            interactDistance = 4.5f;
+
             if (playerCamera == null)
             {
                 playerCamera = GetComponentInChildren<Camera>(true);
@@ -94,7 +96,11 @@ namespace Task8_11
             targetItem = null;
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-            RaycastHit[] hits = Physics.RaycastAll(ray, interactDistance);
+            RaycastHit[] hits = Physics.SphereCastAll(ray, 0.18f, interactDistance);
+            if (hits == null || hits.Length == 0)
+            {
+                hits = Physics.RaycastAll(ray, interactDistance);
+            }
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
             PickupableItem bestItem = null;
@@ -338,7 +344,7 @@ namespace Task8_11
             if (heldItem != null && body == heldItem.rb) return;
 
             Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z).normalized;
-            body.AddForce(pushDir * pushPower * 8f, ForceMode.Force);
+            body.linearVelocity = new Vector3(pushDir.x * 1.8f, body.linearVelocity.y, pushDir.z * 1.8f);
         }
 
         void OnGUI()
@@ -428,6 +434,13 @@ namespace Task8_11
                     continue;
                 }
 
+                if (n.Contains("Rug"))
+                {
+                    Collider rugCol = t.GetComponent<Collider>();
+                    if (rugCol != null) Object.Destroy(rugCol);
+                    continue;
+                }
+
                 if (n.StartsWith("Room_Floor") || n.StartsWith("Room_Ceiling") || n.StartsWith("Room_Wall") ||
                     n.StartsWith("Room_Window") || n.StartsWith("Room_Doorway") || n.StartsWith("Window_") ||
                     n.StartsWith("Wall_") || n.StartsWith("Door_") || n.StartsWith("Portal_") ||
@@ -447,31 +460,24 @@ namespace Task8_11
                     continue;
                 }
 
-                if (t.GetComponent<PickupableItem>() != null)
+                Renderer[] rends = t.GetComponentsInChildren<Renderer>();
+                if (rends.Length > 0)
                 {
-                    continue;
-                }
+                    Bounds b = rends[0].bounds;
+                    for (int r = 1; r < rends.Length; r++)
+                    {
+                        b.Encapsulate(rends[r].bounds);
+                    }
 
-                Collider col = t.GetComponent<Collider>();
-                if (col == null)
-                {
-                    Renderer[] rends = t.GetComponentsInChildren<Renderer>();
-                    if (rends.Length > 0)
-                    {
-                        Bounds b = rends[0].bounds;
-                        for (int r = 1; r < rends.Length; r++) b.Encapsulate(rends[r].bounds);
-                        BoxCollider bc = t.gameObject.AddComponent<BoxCollider>();
-                        bc.center = t.InverseTransformPoint(b.center);
-                        bc.size = new Vector3(
-                            t.lossyScale.x > 0.001f ? b.size.x / t.lossyScale.x : b.size.x,
-                            t.lossyScale.y > 0.001f ? b.size.y / t.lossyScale.y : b.size.y,
-                            t.lossyScale.z > 0.001f ? b.size.z / t.lossyScale.z : b.size.z
-                        );
-                    }
-                    else
-                    {
-                        continue;
-                    }
+                    BoxCollider bc = t.GetComponent<BoxCollider>();
+                    if (bc == null) bc = t.gameObject.AddComponent<BoxCollider>();
+                    bc.center = t.InverseTransformPoint(b.center);
+                    bc.size = new Vector3(
+                        Mathf.Abs(t.lossyScale.x) > 0.001f ? b.size.x / Mathf.Abs(t.lossyScale.x) : b.size.x,
+                        Mathf.Abs(t.lossyScale.y) > 0.001f ? b.size.y / Mathf.Abs(t.lossyScale.y) : b.size.y,
+                        Mathf.Abs(t.lossyScale.z) > 0.001f ? b.size.z / Mathf.Abs(t.lossyScale.z) : b.size.z
+                    );
+                    bc.size = new Vector3(Mathf.Max(bc.size.x, 0.25f), Mathf.Max(bc.size.y, 0.25f), Mathf.Max(bc.size.z, 0.25f));
                 }
 
                 Rigidbody rb = t.GetComponent<Rigidbody>();
@@ -484,8 +490,8 @@ namespace Task8_11
                 string displayName = GetFriendlyPropName(n);
                 float mass = GetAppropriateMass(n);
                 rb.mass = mass;
-                rb.linearDamping = 1.0f;
-                rb.angularDamping = 1.5f;
+                rb.linearDamping = 0.5f;
+                rb.angularDamping = 1.0f;
 
                 if (n.Contains("Chair") || n.Contains("Table") || n.Contains("Desk") || n.Contains("TV") ||
                     n.Contains("Sofa") || n.Contains("Bookcase") || n.Contains("Fridge") || n.Contains("Coat"))
@@ -498,8 +504,10 @@ namespace Task8_11
                     rb.isKinematic = true;
                 }
 
-                PickupableItem pItem = t.gameObject.AddComponent<PickupableItem>();
+                PickupableItem pItem = t.GetComponent<PickupableItem>();
+                if (pItem == null) pItem = t.gameObject.AddComponent<PickupableItem>();
                 pItem.itemName = displayName;
+                pItem.rb = rb;
             }
         }
 
