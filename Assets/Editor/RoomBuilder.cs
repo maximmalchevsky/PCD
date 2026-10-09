@@ -9,20 +9,50 @@ namespace Task8_11
     [InitializeOnLoad]
     public static class RoomBuilder
     {
+        private static bool isBuilding = false;
+
         static RoomBuilder()
         {
-            EditorApplication.delayCall += AutoBuildIfRequested;
+            EditorApplication.delayCall += TriggerBuild;
+            EditorApplication.update += CheckAndBuildIfNeeded;
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
         }
 
-        private static void AutoBuildIfRequested()
+        private static void OnPlayModeChanged(PlayModeStateChange state)
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-            Scene scene = EditorSceneManager.GetActiveScene();
-            if (scene.name == "task6_7")
+            TriggerBuild();
+        }
+
+        private static void TriggerBuild()
+        {
+            EditorApplication.delayCall += () =>
             {
-                BuildRoomAndPortals(scene);
-                EditorSceneManager.MarkSceneDirty(scene);
-                EditorSceneManager.SaveScene(scene);
+                CheckAndBuildIfNeeded();
+            };
+        }
+
+        private static void CheckAndBuildIfNeeded()
+        {
+            if (isBuilding) return;
+            GameObject cityView = GameObject.Find("Window_City_View");
+            GameObject paper = GameObject.Find("Paper_Чертеж_проекта");
+            if (cityView == null || paper == null)
+            {
+                isBuilding = true;
+                try
+                {
+                    Scene scene = EditorSceneManager.GetActiveScene();
+                    BuildRoomAndPortals(scene);
+                    if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+                    {
+                        EditorSceneManager.MarkSceneDirty(scene);
+                        EditorSceneManager.SaveScene(scene);
+                    }
+                }
+                finally
+                {
+                    isBuilding = false;
+                }
             }
         }
 
@@ -700,7 +730,7 @@ namespace Task8_11
             GameObject rightDoorKnob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             rightDoorKnob.name = "Knob";
             rightDoorKnob.transform.SetParent(rightDoorLeaf.transform);
-            rightDoorKnob.transform.localPosition = new Vector3(-0.40f, 0f, 0.55f);
+            rightDoorKnob.transform.localPosition = new Vector3(-0.40f, 0.55f, 0.55f);
             rightDoorKnob.transform.localScale = new Vector3(0.06f, 0.06f, 0.06f);
             rightDoorKnob.GetComponent<Renderer>().sharedMaterial = handleMat;
             Object.DestroyImmediate(rightDoorKnob.GetComponent<Collider>());
