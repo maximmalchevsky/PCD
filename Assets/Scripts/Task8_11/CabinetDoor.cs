@@ -47,5 +47,13 @@ namespace Task8_11
         {
             isOpen = !isOpen;
         }
+
+        public bool IsLookingAtDoorLeaf(Collider col)
+        {
+            if (col == null) return false;
+            if (leftDoor != null && (col.transform == leftDoor || col.transform.IsChildOf(leftDoor))) return true;
+            if (rightDoor != null && (col.transform == rightDoor || col.transform.IsChildOf(rightDoor))) return true;
+            return false;
+        }
     }
 }

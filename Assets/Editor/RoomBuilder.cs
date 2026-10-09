@@ -6,8 +6,26 @@ using UnityEngine.SceneManagement;
 
 namespace Task8_11
 {
+    [InitializeOnLoad]
     public static class RoomBuilder
     {
+        static RoomBuilder()
+        {
+            EditorApplication.delayCall += AutoBuildIfRequested;
+        }
+
+        private static void AutoBuildIfRequested()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            Scene scene = EditorSceneManager.GetActiveScene();
+            if (scene.name == "task6_7")
+            {
+                BuildRoomAndPortals(scene);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+        }
+
         [MenuItem("City/Build Interior Room (Tasks 8-11)")]
         public static void BuildRoomMenu()
         {
@@ -49,6 +67,11 @@ namespace Task8_11
             portalMat.SetColor("_BaseColor", new Color(0.1f, 0.85f, 1.0f, 1.0f));
             portalMat.color = new Color(0.1f, 0.85f, 1.0f, 1.0f);
             AssetDatabase.CreateAsset(portalMat, "Assets/Materials/Mat_Portal_Blue.mat");
+
+            Material thresholdMat = new Material(litShaderMat);
+            thresholdMat.SetColor("_BaseColor", new Color(0.18f, 0.20f, 0.22f));
+            thresholdMat.SetFloat("_Smoothness", 0.3f);
+            AssetDatabase.CreateAsset(thresholdMat, "Assets/Materials/Mat_Portal_Threshold.mat");
 
             Material wallMat = new Material(litShaderMat);
             wallMat.SetColor("_BaseColor", new Color(0.92f, 0.89f, 0.83f));
@@ -323,26 +346,125 @@ namespace Task8_11
             GameObject deskPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/desk.fbx");
             if (deskPrefab != null)
             {
-                SpawnProp(deskPrefab, new Vector3(rCenter.x + 1.7f, floorY, rCenter.z + 1.6f), Quaternion.Euler(0f, 180f, 0f), 0.14f, "Desk", 30f, roomRoot.transform);
+                SpawnProp(deskPrefab, new Vector3(rCenter.x + 1.8f, floorY, rCenter.z + 1.5f), Quaternion.Euler(0f, 180f, 0f), 0.14f, "Desk", 30f, roomRoot.transform);
             }
 
             GameObject chairDeskPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/chairDesk.fbx");
             if (chairDeskPrefab != null)
             {
-                SpawnProp(chairDeskPrefab, new Vector3(rCenter.x + 0.95f, floorY, rCenter.z + 1.6f), Quaternion.Euler(0f, 45f, 0f), 0.17f, "Chair_Office", 8f, roomRoot.transform);
+                SpawnProp(chairDeskPrefab, new Vector3(rCenter.x + 1.32f, floorY, rCenter.z + 1.5f), Quaternion.Euler(0f, 90f, 0f), 0.085f, "Chair_Office", 8f, roomRoot.transform);
+            }
+
+            GameObject rugRectPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/rugRectangle.fbx");
+            if (rugRectPrefab != null)
+            {
+                SpawnProp(rugRectPrefab, new Vector3(rCenter.x + 1.6f, floorY + 0.002f, rCenter.z + 1.5f), Quaternion.Euler(0f, 90f, 0f), 0.14f, "Rug_Desk", 0f, roomRoot.transform);
+            }
+
+            GameObject loungeSofaPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/loungeSofaLong.fbx");
+            if (loungeSofaPrefab != null)
+            {
+                SpawnProp(loungeSofaPrefab, new Vector3(rCenter.x - 0.6f, floorY, rCenter.z + 2.05f), Quaternion.Euler(0f, 180f, 0f), 0.11f, "Sofa_Lounge", 25f, roomRoot.transform);
+            }
+
+            GameObject pillowPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/pillow.fbx");
+            if (pillowPrefab != null)
+            {
+                SpawnProp(pillowPrefab, new Vector3(rCenter.x - 1.05f, floorY + 0.32f, rCenter.z + 2.0f), Quaternion.Euler(0f, 25f, 0f), 0.09f, "Pillow_1", 0f, roomRoot.transform);
+            }
+
+            GameObject pillowBluePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/pillowBlue.fbx");
+            if (pillowBluePrefab != null)
+            {
+                SpawnProp(pillowBluePrefab, new Vector3(rCenter.x - 0.15f, floorY + 0.32f, rCenter.z + 2.0f), Quaternion.Euler(0f, -20f, 0f), 0.09f, "Pillow_Blue", 0f, roomRoot.transform);
+            }
+
+            GameObject rugRoundPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/rugRound.fbx");
+            if (rugRoundPrefab != null)
+            {
+                SpawnProp(rugRoundPrefab, new Vector3(rCenter.x - 0.6f, floorY + 0.003f, rCenter.z + 0.9f), Quaternion.identity, 0.15f, "Rug_Coffee", 0f, roomRoot.transform);
             }
 
             GameObject coffeeTablePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/tableCoffee.fbx");
             if (coffeeTablePrefab != null)
             {
-                SpawnProp(coffeeTablePrefab, new Vector3(rCenter.x - 0.6f, floorY, rCenter.z + 1.1f), Quaternion.identity, 0.14f, "Table_Coffee", 12f, roomRoot.transform);
+                SpawnProp(coffeeTablePrefab, new Vector3(rCenter.x - 0.6f, floorY, rCenter.z + 0.9f), Quaternion.identity, 0.13f, "Table_Coffee", 12f, roomRoot.transform);
             }
 
             GameObject chairPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/chair.fbx");
             if (chairPrefab != null)
             {
-                SpawnProp(chairPrefab, new Vector3(rCenter.x - 1.35f, floorY, rCenter.z + 1.1f), Quaternion.Euler(0f, 90f, 0f), 0.14f, "Chair_Side_1", 6f, roomRoot.transform);
-                SpawnProp(chairPrefab, new Vector3(rCenter.x + 0.15f, floorY, rCenter.z + 1.1f), Quaternion.Euler(0f, -90f, 0f), 0.14f, "Chair_Side_2", 6f, roomRoot.transform);
+                SpawnProp(chairPrefab, new Vector3(rCenter.x + 0.25f, floorY, rCenter.z + 0.9f), Quaternion.Euler(0f, -90f, 0f), 0.085f, "Chair_Side", 6f, roomRoot.transform);
+            }
+
+            GameObject floorLampPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/lampRoundFloor.fbx");
+            if (floorLampPrefab != null)
+            {
+                SpawnProp(floorLampPrefab, new Vector3(rCenter.x - 1.85f, floorY, rCenter.z + 2.1f), Quaternion.identity, 0.12f, "Lamp_Floor", 0f, roomRoot.transform);
+
+                GameObject floorLightObj = new GameObject("Floor_Lamp_Light");
+                floorLightObj.transform.SetParent(roomRoot.transform);
+                floorLightObj.transform.position = new Vector3(rCenter.x - 1.85f, floorY + 1.2f, rCenter.z + 2.1f);
+                Light floorLight = floorLightObj.AddComponent<Light>();
+                floorLight.type = LightType.Point;
+                floorLight.range = 3.0f;
+                floorLight.intensity = 1.4f;
+                floorLight.color = new Color(1.0f, 0.88f, 0.70f);
+            }
+
+            GameObject tvCabPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/cabinetTelevision.fbx");
+            if (tvCabPrefab != null)
+            {
+                SpawnProp(tvCabPrefab, new Vector3(rCenter.x + 2.15f, floorY, rCenter.z - 0.85f), Quaternion.Euler(0f, -90f, 0f), 0.13f, "TV_Cabinet", 25f, roomRoot.transform);
+            }
+
+            GameObject tvPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/televisionModern.fbx");
+            if (tvPrefab != null)
+            {
+                SpawnProp(tvPrefab, new Vector3(rCenter.x + 2.15f, floorY + 0.45f, rCenter.z - 0.85f), Quaternion.Euler(0f, -90f, 0f), 0.13f, "TV_Modern", 0f, roomRoot.transform);
+            }
+
+            GameObject speakerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/speakerSmall.fbx");
+            if (speakerPrefab != null)
+            {
+                SpawnProp(speakerPrefab, new Vector3(rCenter.x + 2.15f, floorY + 0.45f, rCenter.z - 0.35f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Speaker_Left", 0f, roomRoot.transform);
+                SpawnProp(speakerPrefab, new Vector3(rCenter.x + 2.15f, floorY + 0.45f, rCenter.z - 1.35f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Speaker_Right", 0f, roomRoot.transform);
+            }
+
+            GameObject bookcasePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/bookcaseOpen.fbx");
+            if (bookcasePrefab != null)
+            {
+                SpawnProp(bookcasePrefab, new Vector3(rCenter.x + 1.8f, floorY, rCenter.z - rLength * 0.5f + 0.32f), Quaternion.identity, 0.13f, "Bookcase_Open", 25f, roomRoot.transform);
+            }
+
+            GameObject sideTableDrawersPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/sideTableDrawers.fbx");
+            if (sideTableDrawersPrefab != null)
+            {
+                SpawnProp(sideTableDrawersPrefab, new Vector3(rCenter.x - 1.35f, floorY, rCenter.z - rLength * 0.5f + 0.32f), Quaternion.identity, 0.13f, "Coffee_Station_Table", 15f, roomRoot.transform);
+            }
+
+            GameObject coffeeMachinePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/kitchenCoffeeMachine.fbx");
+            if (coffeeMachinePrefab != null)
+            {
+                SpawnProp(coffeeMachinePrefab, new Vector3(rCenter.x - 1.35f, floorY + 0.52f, rCenter.z - rLength * 0.5f + 0.32f), Quaternion.identity, 0.11f, "Coffee_Machine", 0f, roomRoot.transform);
+            }
+
+            GameObject fridgePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/kitchenFridgeSmall.fbx");
+            if (fridgePrefab != null)
+            {
+                SpawnProp(fridgePrefab, new Vector3(rCenter.x - 2.05f, floorY, rCenter.z - rLength * 0.5f + 0.32f), Quaternion.identity, 0.13f, "Fridge_Small", 20f, roomRoot.transform);
+            }
+
+            GameObject coatRackPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/coatRackStanding.fbx");
+            if (coatRackPrefab != null)
+            {
+                SpawnProp(coatRackPrefab, new Vector3(rCenter.x - rWidth * 0.5f + 0.45f, floorY, rCenter.z - 1.15f), Quaternion.identity, 0.13f, "Coat_Rack", 0f, roomRoot.transform);
+            }
+
+            GameObject pottedPlantPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/pottedPlant.fbx");
+            if (pottedPlantPrefab != null)
+            {
+                SpawnProp(pottedPlantPrefab, new Vector3(rCenter.x - rWidth * 0.5f + 0.45f, floorY, rCenter.z + 1.25f), Quaternion.identity, 0.13f, "Potted_Plant_Entrance", 0f, roomRoot.transform);
             }
 
             GameObject cabinetRoot = new GameObject("Cabinet_With_Doors");
@@ -436,11 +558,6 @@ namespace Task8_11
             rightDoorKnob.GetComponent<Renderer>().sharedMaterial = handleMat;
             Object.DestroyImmediate(rightDoorKnob.GetComponent<Collider>());
 
-            BoxCollider cabTrigger = cabinetRoot.AddComponent<BoxCollider>();
-            cabTrigger.size = new Vector3(1.5f, 1.5f, 1.0f);
-            cabTrigger.center = new Vector3(0f, 0.70f, 0.35f);
-            cabTrigger.isTrigger = true;
-
             CabinetDoor cabDoorComp = cabinetRoot.AddComponent<CabinetDoor>();
             cabDoorComp.leftDoor = leftDoorPivot.transform;
             cabDoorComp.rightDoor = rightDoorPivot.transform;
@@ -449,25 +566,25 @@ namespace Task8_11
             float deskTopY = floorY + 0.54f;
             float shelf1Y = floorY + 0.50f;
             float shelf2Y = floorY + 0.94f;
-            float coffeeTableTopY = floorY + 0.32f;
-            float cabZ = rCenter.z - rLength * 0.5f + 0.32f;
+            float coffeeTableTopY = floorY + 0.38f;
+            float cabZ = cabinetRoot.transform.position.z + 0.05f;
 
-            GameObject screenPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerScreen.fbx");
-            if (screenPrefab != null)
+            GameObject monitorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerScreen.fbx");
+            if (monitorPrefab != null)
             {
-                SpawnProp(screenPrefab, new Vector3(rCenter.x + 1.9f, deskTopY, rCenter.z + 1.6f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Screen", 0f, roomRoot.transform);
+                SpawnProp(monitorPrefab, new Vector3(rCenter.x + 1.8f, deskTopY, rCenter.z + 1.5f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Monitor", 0f, roomRoot.transform);
             }
 
             GameObject kbPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerKeyboard.fbx");
             if (kbPrefab != null)
             {
-                SpawnProp(kbPrefab, new Vector3(rCenter.x + 1.65f, deskTopY, rCenter.z + 1.6f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Keyboard", 0f, roomRoot.transform);
+                SpawnProp(kbPrefab, new Vector3(rCenter.x + 1.62f, deskTopY, rCenter.z + 1.5f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Keyboard", 0f, roomRoot.transform);
             }
 
             GameObject mousePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/computerMouse.fbx");
             if (mousePrefab != null)
             {
-                SpawnProp(mousePrefab, new Vector3(rCenter.x + 1.65f, deskTopY, rCenter.z + 1.4f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Mouse", 0f, roomRoot.transform);
+                SpawnProp(mousePrefab, new Vector3(rCenter.x + 1.62f, deskTopY, rCenter.z + 1.3f), Quaternion.Euler(0f, -90f, 0f), 0.11f, "Mouse", 0f, roomRoot.transform);
             }
 
             GameObject lampTablePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/lampSquareTable.fbx");
@@ -479,121 +596,150 @@ namespace Task8_11
             GameObject laptopPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/laptop.fbx");
             if (laptopPrefab != null)
             {
-                SpawnPickup(laptopPrefab, new Vector3(rCenter.x + 1.45f, deskTopY, rCenter.z + 1.9f), Quaternion.Euler(0f, -60f, 0f), 0.045f, "Ноутбук", 1.5f, roomRoot.transform);
+                SpawnPickup(laptopPrefab, new Vector3(rCenter.x + 1.55f, deskTopY, rCenter.z + 1.85f), Quaternion.Euler(0f, -60f, 0f), 0.045f, "Ноутбук", 1.5f, roomRoot.transform);
             }
 
             GameObject booksPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/books.fbx");
             if (booksPrefab != null)
             {
-                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 1.85f, deskTopY, rCenter.z + 2.0f), Quaternion.identity, 0.18f, "Книги на столе", 1.0f, roomRoot.transform);
-                SpawnPickup(booksPrefab, new Vector3(rCenter.x - 0.28f, shelf2Y, cabZ), Quaternion.identity, 0.16f, "Книги в шкафу (верх)", 0.8f, roomRoot.transform, cabDoorComp);
-                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 0.28f, shelf2Y, cabZ), Quaternion.identity, 0.16f, "Книги в шкафу (верх 2)", 0.8f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 1.95f, deskTopY, rCenter.z + 1.85f), Quaternion.identity, 0.18f, "Книги на столе", 1.0f, roomRoot.transform);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x - 0.25f, shelf2Y, cabZ), Quaternion.identity, 0.16f, "Книги в шкафу", 0.8f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 0.25f, shelf2Y, cabZ), Quaternion.identity, 0.16f, "Энциклопедия в шкафу", 0.8f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(booksPrefab, new Vector3(rCenter.x + 1.8f, floorY + 0.55f, rCenter.z - rLength * 0.5f + 0.32f), Quaternion.identity, 0.16f, "Книги на стеллаже", 0.8f, roomRoot.transform);
             }
 
             GameObject plant2Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/plantSmall2.fbx");
             if (plant2Prefab != null)
             {
-                SpawnPickup(plant2Prefab, new Vector3(rCenter.x - 0.28f, shelf1Y, cabZ), Quaternion.identity, 0.09f, "Цветок в шкафу", 0.9f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(plant2Prefab, new Vector3(rCenter.x - 0.25f, shelf1Y, cabZ), Quaternion.identity, 0.09f, "Цветок в шкафу", 0.9f, roomRoot.transform, cabDoorComp);
             }
 
             GameObject boxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/cardboardBoxClosed.fbx");
             if (boxPrefab != null)
             {
-                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 0.28f, shelf1Y, cabZ), Quaternion.identity, 0.11f, "Коробка в шкафу", 1.2f, roomRoot.transform, cabDoorComp);
-                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 1.8f, floorY, rCenter.z - 1.2f), Quaternion.Euler(0f, 25f, 0f), 0.16f, "Большая коробка", 2.2f, roomRoot.transform);
+                SpawnPickup(boxPrefab, new Vector3(rCenter.x + 0.25f, shelf1Y, cabZ), Quaternion.identity, 0.11f, "Коробка в шкафу", 1.2f, roomRoot.transform, cabDoorComp);
+                SpawnPickup(boxPrefab, new Vector3(rCenter.x - rWidth * 0.5f + 0.45f, floorY, rCenter.z - 1.8f), Quaternion.Euler(0f, 25f, 0f), 0.16f, "Коробка у входа", 2.2f, roomRoot.transform);
             }
 
             GameObject radioPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/radio.fbx");
             if (radioPrefab != null)
             {
-                SpawnPickup(radioPrefab, new Vector3(rCenter.x - 0.45f, coffeeTableTopY, rCenter.z + 1.1f), Quaternion.identity, 0.08f, "Радиоприемник", 1.1f, roomRoot.transform);
+                SpawnPickup(radioPrefab, new Vector3(rCenter.x - 0.45f, coffeeTableTopY, rCenter.z + 0.9f), Quaternion.identity, 0.08f, "Радиоприемник", 1.1f, roomRoot.transform);
             }
 
             GameObject plant1Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/plantSmall1.fbx");
             if (plant1Prefab != null)
             {
-                SpawnPickup(plant1Prefab, new Vector3(rCenter.x - 0.75f, coffeeTableTopY, rCenter.z + 1.1f), Quaternion.identity, 0.09f, "Цветок на столике", 1.0f, roomRoot.transform);
+                SpawnPickup(plant1Prefab, new Vector3(rCenter.x - 0.75f, coffeeTableTopY, rCenter.z + 0.9f), Quaternion.identity, 0.09f, "Цветок на столике", 1.0f, roomRoot.transform);
             }
 
             GameObject bearPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/bear.fbx");
             if (bearPrefab != null)
             {
-                SpawnPickup(bearPrefab, new Vector3(rCenter.x - 1.35f, floorY + 0.32f, rCenter.z + 1.1f), Quaternion.Euler(0f, 90f, 0f), 0.08f, "Плюшевый мишка", 0.7f, roomRoot.transform);
+                SpawnPickup(bearPrefab, new Vector3(rCenter.x - 0.6f, floorY + 0.32f, rCenter.z + 2.05f), Quaternion.identity, 0.08f, "Плюшевый мишка", 0.7f, roomRoot.transform);
             }
 
             GameObject trashPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/trashcan.fbx");
             if (trashPrefab != null)
             {
-                SpawnPickup(trashPrefab, new Vector3(rCenter.x + 1.9f, floorY, rCenter.z + 0.7f), Quaternion.identity, 0.04f, "Корзина для бумаг", 1.0f, roomRoot.transform);
+                SpawnPickup(trashPrefab, new Vector3(rCenter.x + 1.9f, floorY, rCenter.z + 0.8f), Quaternion.identity, 0.045f, "Корзина для бумаг", 1.0f, roomRoot.transform);
+            }
+
+            GameObject plant3Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/plantSmall3.fbx");
+            if (plant3Prefab != null)
+            {
+                SpawnPickup(plant3Prefab, new Vector3(rCenter.x + 1.8f, floorY + 0.95f, rCenter.z - rLength * 0.5f + 0.32f), Quaternion.identity, 0.09f, "Цветок на стеллаже", 0.9f, roomRoot.transform);
             }
 
             GameObject cityPortalObj = new GameObject("Portal_City_To_Room");
-            cityPortalObj.transform.position = new Vector3(-14.5f, 0.03f, -3.98f);
+            cityPortalObj.transform.position = new Vector3(-13.73f, 0.02f, -3.98f);
 
-            GameObject cityPortalDisk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            cityPortalDisk.name = "Blue_Glowing_Zone";
-            cityPortalDisk.transform.SetParent(cityPortalObj.transform);
-            cityPortalDisk.transform.localPosition = Vector3.zero;
-            cityPortalDisk.transform.localScale = new Vector3(2.2f, 0.02f, 2.2f);
-            cityPortalDisk.GetComponent<Renderer>().sharedMaterial = portalMat;
-            Object.DestroyImmediate(cityPortalDisk.GetComponent<Collider>());
+            GameObject cityMatObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cityMatObj.name = "Entrance_Threshold_Mat";
+            cityMatObj.transform.SetParent(cityPortalObj.transform);
+            cityMatObj.transform.localPosition = new Vector3(0f, 0.01f, 0f);
+            cityMatObj.transform.localScale = new Vector3(0.55f, 0.02f, 1.4f);
+            cityMatObj.GetComponent<Renderer>().sharedMaterial = thresholdMat;
+            Object.DestroyImmediate(cityMatObj.GetComponent<Collider>());
 
-            GameObject cityLightObj = new GameObject("Portal_Glow_Light");
+            GameObject cityStripObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cityStripObj.name = "Glowing_Accent_Strip";
+            cityStripObj.transform.SetParent(cityPortalObj.transform);
+            cityStripObj.transform.localPosition = new Vector3(-0.25f, 0.015f, 0f);
+            cityStripObj.transform.localScale = new Vector3(0.04f, 0.025f, 1.36f);
+            cityStripObj.GetComponent<Renderer>().sharedMaterial = portalMat;
+            Object.DestroyImmediate(cityStripObj.GetComponent<Collider>());
+
+            GameObject cityLightObj = new GameObject("Entrance_Porch_Light");
             cityLightObj.transform.SetParent(cityPortalObj.transform);
-            cityLightObj.transform.localPosition = new Vector3(0f, 0.4f, 0f);
+            cityLightObj.transform.localPosition = new Vector3(0f, 1.9f, 0f);
             Light cityLight = cityLightObj.AddComponent<Light>();
             cityLight.type = LightType.Point;
-            cityLight.range = 3.2f;
-            cityLight.intensity = 2.2f;
-            cityLight.color = new Color(0.1f, 0.7f, 1.0f);
-
-            SphereCollider cityTrigger = cityPortalObj.AddComponent<SphereCollider>();
-            cityTrigger.radius = 1.1f;
-            cityTrigger.isTrigger = true;
+            cityLight.range = 3.5f;
+            cityLight.intensity = 1.8f;
+            cityLight.color = new Color(0.85f, 0.92f, 1.0f);
 
             GameObject roomSpawnPoint = new GameObject("SpawnPoint_Room");
             roomSpawnPoint.transform.SetParent(roomRoot.transform);
-            roomSpawnPoint.transform.position = new Vector3(rCenter.x - 0.6f, floorY + 0.15f, rCenter.z);
+            roomSpawnPoint.transform.position = new Vector3(rCenter.x - rWidth * 0.5f + 0.9f, floorY + 0.1f, rCenter.z);
             roomSpawnPoint.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
 
             TeleportZone cityPortalComp = cityPortalObj.AddComponent<TeleportZone>();
             cityPortalComp.targetPoint = roomSpawnPoint.transform;
+            cityPortalComp.interactRadius = 1.35f;
+            cityPortalComp.promptText = "[E] Войти в здание";
             cityPortalComp.glowLight = cityLight;
-            cityPortalComp.ringRenderer = cityPortalDisk.GetComponent<Renderer>();
+            cityPortalComp.ringRenderer = cityStripObj.GetComponent<Renderer>();
 
             GameObject roomPortalObj = new GameObject("Portal_Room_To_City");
             roomPortalObj.transform.SetParent(roomRoot.transform);
-            roomPortalObj.transform.position = new Vector3(rCenter.x - 2.1f, floorY + 0.03f, rCenter.z);
+            roomPortalObj.transform.position = new Vector3(rCenter.x - rWidth * 0.5f + 0.45f, floorY, rCenter.z);
 
-            GameObject roomPortalDisk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            roomPortalDisk.name = "Blue_Glowing_Zone";
-            roomPortalDisk.transform.SetParent(roomPortalObj.transform);
-            roomPortalDisk.transform.localPosition = Vector3.zero;
-            roomPortalDisk.transform.localScale = new Vector3(1.5f, 0.02f, 1.5f);
-            roomPortalDisk.GetComponent<Renderer>().sharedMaterial = portalMat;
-            Object.DestroyImmediate(roomPortalDisk.GetComponent<Collider>());
+            GameObject doormatPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/CityAssets/FurnitureKit/Models/FBX format/rugDoormat.fbx");
+            Renderer roomIndicatorRenderer = null;
+            if (doormatPrefab != null)
+            {
+                SpawnProp(doormatPrefab, new Vector3(rCenter.x - rWidth * 0.5f + 0.45f, floorY + 0.002f, rCenter.z), Quaternion.Euler(0f, 90f, 0f), 0.14f, "Doormat_Entrance", 0f, roomRoot.transform);
+            }
+            else
+            {
+                GameObject roomMatObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                roomMatObj.name = "Room_Threshold_Mat";
+                roomMatObj.transform.SetParent(roomPortalObj.transform);
+                roomMatObj.transform.localPosition = new Vector3(0f, 0.01f, 0f);
+                roomMatObj.transform.localScale = new Vector3(0.55f, 0.02f, 0.9f);
+                roomMatObj.GetComponent<Renderer>().sharedMaterial = thresholdMat;
+                Object.DestroyImmediate(roomMatObj.GetComponent<Collider>());
+            }
 
-            GameObject roomLightObj = new GameObject("Portal_Glow_Light");
+            GameObject roomStripObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            roomStripObj.name = "Room_Glowing_Strip";
+            roomStripObj.transform.SetParent(roomPortalObj.transform);
+            roomStripObj.transform.localPosition = new Vector3(0.25f, 0.015f, 0f);
+            roomStripObj.transform.localScale = new Vector3(0.04f, 0.025f, 0.85f);
+            roomStripObj.GetComponent<Renderer>().sharedMaterial = portalMat;
+            Object.DestroyImmediate(roomStripObj.GetComponent<Collider>());
+            roomIndicatorRenderer = roomStripObj.GetComponent<Renderer>();
+
+            GameObject roomLightObj = new GameObject("Room_Entrance_Accent_Light");
             roomLightObj.transform.SetParent(roomPortalObj.transform);
-            roomLightObj.transform.localPosition = new Vector3(0f, 0.4f, 0f);
+            roomLightObj.transform.localPosition = new Vector3(0f, 1.8f, 0f);
             Light roomLight = roomLightObj.AddComponent<Light>();
             roomLight.type = LightType.Point;
             roomLight.range = 2.8f;
-            roomLight.intensity = 2.0f;
-            roomLight.color = new Color(0.1f, 0.7f, 1.0f);
-
-            SphereCollider roomTrigger = roomPortalObj.AddComponent<SphereCollider>();
-            roomTrigger.radius = 0.85f;
-            roomTrigger.isTrigger = true;
+            roomLight.intensity = 1.5f;
+            roomLight.color = new Color(1.0f, 0.90f, 0.75f);
 
             GameObject citySpawnPoint = new GameObject("SpawnPoint_City");
-            citySpawnPoint.transform.position = new Vector3(-15.6f, 0.2f, -3.98f);
-            citySpawnPoint.transform.rotation = Quaternion.Euler(0f, 270f, 0f);
+            citySpawnPoint.transform.position = new Vector3(-13.73f, 0.1f, -2.85f);
+            citySpawnPoint.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
 
             TeleportZone roomPortalComp = roomPortalObj.AddComponent<TeleportZone>();
             roomPortalComp.targetPoint = citySpawnPoint.transform;
+            roomPortalComp.interactRadius = 1.25f;
+            roomPortalComp.promptText = "[E] Выйти на улицу";
             roomPortalComp.glowLight = roomLight;
-            roomPortalComp.ringRenderer = roomPortalDisk.GetComponent<Renderer>();
+            roomPortalComp.ringRenderer = roomIndicatorRenderer;
 
             GameObject player = GameObject.Find("Player");
             if (player != null)

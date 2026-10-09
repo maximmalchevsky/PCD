@@ -13,11 +13,22 @@ namespace Task8_11
         public float throwForce = 7.5f;
 
         private PickupableItem heldItem = null;
+        private PickupableItem targetItem = null;
         private Transform holdPoint;
         private string currentPrompt = string.Empty;
         private string warningMessage = string.Empty;
         private float warningTimer = 0f;
         private bool showHelp = true;
+
+        public bool IsTargetingItem()
+        {
+            return heldItem != null || targetItem != null;
+        }
+
+        public bool HasActiveInteraction()
+        {
+            return heldItem != null || !string.IsNullOrEmpty(currentPrompt);
+        }
 
         void Start()
         {
@@ -78,21 +89,75 @@ namespace Task8_11
         private void CheckLookTarget()
         {
             currentPrompt = string.Empty;
-            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-            RaycastHit hit;
+            targetItem = null;
 
-            if (Physics.Raycast(ray, out hit, interactDistance))
+            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            RaycastHit[] hits = Physics.RaycastAll(ray, interactDistance);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            PickupableItem bestItem = null;
+            CabinetDoor bestCab = null;
+            Collider bestCabHitCol = null;
+            LightSwitch bestSwitch = null;
+            EntranceDoor bestDoor = null;
+            WindowBlinds bestBlinds = null;
+            FanController bestFan = null;
+
+            for (int i = 0; i < hits.Length; i++)
             {
-                PickupableItem item = hit.collider.GetComponentInParent<PickupableItem>();
-                if (item != null)
+                RaycastHit h = hits[i];
+                if (h.collider.isTrigger) continue;
+
+                PickupableItem item = h.collider.GetComponentInParent<PickupableItem>();
+                if (item != null && bestItem == null)
                 {
-                    currentPrompt = "[E] Взять: " + item.itemName;
+                    bestItem = item;
+                }
+
+                LightSwitch sw = h.collider.GetComponentInParent<LightSwitch>();
+                if (sw != null && bestSwitch == null)
+                {
+                    bestSwitch = sw;
+                }
+
+                CabinetDoor cab = h.collider.GetComponentInParent<CabinetDoor>();
+                if (cab != null && bestCab == null)
+                {
+                    bestCab = cab;
+                    bestCabHitCol = h.collider;
+                }
+
+                EntranceDoor ed = h.collider.GetComponentInParent<EntranceDoor>();
+                if (ed != null && bestDoor == null)
+                {
+                    bestDoor = ed;
+                }
+
+                WindowBlinds wb = h.collider.GetComponentInParent<WindowBlinds>();
+                if (wb != null && bestBlinds == null)
+                {
+                    bestBlinds = wb;
+                }
+
+                FanController fan = h.collider.GetComponentInParent<FanController>();
+                if (fan != null && bestFan == null)
+                {
+                    bestFan = fan;
+                }
+            }
+
+            if (bestItem != null)
+            {
+                targetItem = bestItem;
+                if (bestItem.parentCabinetDoor == null || bestItem.parentCabinetDoor.isOpen)
+                {
+                    currentPrompt = "[E] Взять: " + bestItem.itemName;
                     if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
                     {
                         string reason;
-                        if (item.CanPickUp(out reason))
+                        if (bestItem.CanPickUp(out reason))
                         {
-                            PickUp(item);
+                            PickUp(bestItem);
                         }
                         else
                         {
@@ -101,61 +166,59 @@ namespace Task8_11
                     }
                     return;
                 }
+            }
 
-                LightSwitch sw = hit.collider.GetComponentInParent<LightSwitch>();
-                if (sw != null)
+            if (bestCab != null)
+            {
+                if (!bestCab.isOpen || bestCab.IsLookingAtDoorLeaf(bestCabHitCol))
                 {
-                    currentPrompt = sw.isOn ? "[E] Выключить свет" : "[E] Включить свет";
-                    if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
-                    {
-                        sw.Toggle();
-                    }
-                    return;
-                }
-
-                CabinetDoor cab = hit.collider.GetComponentInParent<CabinetDoor>();
-                if (cab != null)
-                {
-                    currentPrompt = cab.isOpen ? "[E / F] Закрыть шкаф" : "[E / F] Открыть шкаф";
+                    currentPrompt = bestCab.isOpen ? "[E / F] Закрыть шкаф" : "[E / F] Открыть шкаф";
                     if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.F) || Input.GetMouseButtonDown(0))
                     {
-                        cab.Toggle();
+                        bestCab.Toggle();
                     }
                     return;
                 }
+            }
 
-                EntranceDoor ed = hit.collider.GetComponentInParent<EntranceDoor>();
-                if (ed != null)
+            if (bestDoor != null)
+            {
+                currentPrompt = bestDoor.isOpen ? "[E / F] Закрыть дверь" : "[E / F] Открыть дверь";
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.F) || Input.GetMouseButtonDown(0))
                 {
-                    currentPrompt = ed.isOpen ? "[E / F] Закрыть дверь" : "[E / F] Открыть дверь";
-                    if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.F) || Input.GetMouseButtonDown(0))
-                    {
-                        ed.Toggle();
-                    }
-                    return;
+                    bestDoor.Toggle();
                 }
+                return;
+            }
 
-                WindowBlinds wb = hit.collider.GetComponentInParent<WindowBlinds>();
-                if (wb != null)
+            if (bestSwitch != null)
+            {
+                currentPrompt = bestSwitch.isOn ? "[E] Выключить свет" : "[E] Включить свет";
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
                 {
-                    currentPrompt = wb.isOpen ? "[E / J] Закрыть жалюзи" : "[E / J] Открыть жалюзи";
-                    if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.J) || Input.GetMouseButtonDown(0))
-                    {
-                        wb.Toggle();
-                    }
-                    return;
+                    bestSwitch.Toggle();
                 }
+                return;
+            }
 
-                FanController fan = hit.collider.GetComponentInParent<FanController>();
-                if (fan != null)
+            if (bestBlinds != null)
+            {
+                currentPrompt = bestBlinds.isOpen ? "[E / J] Закрыть жалюзи" : "[E / J] Открыть жалюзи";
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.J) || Input.GetMouseButtonDown(0))
                 {
-                    currentPrompt = fan.isSpinning ? "[E / T] Выключить вентилятор" : "[E / T] Включить вентилятор";
-                    if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(0))
-                    {
-                        fan.Toggle();
-                    }
-                    return;
+                    bestBlinds.Toggle();
                 }
+                return;
+            }
+
+            if (bestFan != null)
+            {
+                currentPrompt = bestFan.isSpinning ? "[E / T] Выключить вентилятор" : "[E / T] Включить вентилятор";
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(0))
+                {
+                    bestFan.Toggle();
+                }
+                return;
             }
         }
 
@@ -259,7 +322,7 @@ namespace Task8_11
 
                 GUI.backgroundColor = new Color(0.08f, 0.12f, 0.2f, 0.82f);
                 string helpText = "УПРАВЛЕНИЕ В КОМНАТЕ:\n" +
-                                  "• Синий круг на полу — Портал в город / в комнату\n" +
+                                  "• Дверной порог со светом — [E] Переход город / комната\n" +
                                   "• [E] или ЛКМ — Взять предмет / Нажать выключатель\n" +
                                   "• [Q] или ПКМ — Бросить предмет в руках\n" +
                                   "• [F] — Открыть / закрыть шкаф или дверь\n" +
