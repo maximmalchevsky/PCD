@@ -31,7 +31,7 @@ namespace Task8_11
                 Rigidbody rb = hits[i].attachedRigidbody;
                 if (rb != null && !rb.isKinematic)
                 {
-                    if (rb.mass > 0.35f) continue;
+                    if (rb.mass > 0.08f) continue;
 
                     Vector3 toBody = rb.position - origin;
                     Vector3 outward = new Vector3(toBody.x, 0f, toBody.z);
@@ -45,18 +45,23 @@ namespace Task8_11
                     float prox = 1f - Mathf.Clamp01(dist / windRadius);
 
                     Vector3 swirl = Vector3.Cross(Vector3.up, outward).normalized;
-                    Vector3 updraft = Vector3.up * Random.Range(1.0f, 2.2f);
-                    Vector3 windDir = outward * 2.0f + updraft + swirl * 0.7f;
+                    Vector3 updraft = Vector3.up * Random.Range(0.9f, 1.8f);
+                    Vector3 windDir = outward * 1.5f + updraft + swirl * 0.6f;
 
-                    float blastForce = Mathf.Max(0.8f, rb.mass * 35f) * prox;
+                    if (rb.position.x > 302.35f && windDir.x > 0f) windDir.x = -0.3f;
+                    if (rb.position.x < 297.65f && windDir.x < 0f) windDir.x = 0.3f;
+                    if (rb.position.z > 302.35f && windDir.z > 0f) windDir.z = -0.3f;
+                    if (rb.position.z < 297.65f && windDir.z < 0f) windDir.z = 0.3f;
+
+                    float blastForce = Mathf.Max(0.5f, rb.mass * 30f) * prox;
                     rb.AddForce(windDir.normalized * blastForce, ForceMode.Force);
 
                     Vector3 torqueDir = new Vector3(Random.Range(-1f, 1f), Random.Range(-0.5f, 0.5f), Random.Range(-1f, 1f));
-                    rb.AddTorque(torqueDir * (blastForce * 0.15f), ForceMode.Force);
+                    rb.AddTorque(torqueDir * (blastForce * 0.12f), ForceMode.Force);
 
-                    if (rb.linearVelocity.magnitude > 3.5f)
+                    if (rb.linearVelocity.magnitude > 2.5f)
                     {
-                        rb.linearVelocity = rb.linearVelocity.normalized * 3.5f;
+                        rb.linearVelocity = rb.linearVelocity.normalized * 2.5f;
                     }
 
                     if (rb.position.y > origin.y - 0.35f)

@@ -40,7 +40,11 @@ namespace Task8_11
             roomFan = Object.FindAnyObjectByType<FanController>();
 
             Vector3 p = transform.position;
-            if (p.y < -49.445f && p.y > -49.60f)
+            if (p.x > 302.5f || p.x < 297.5f || p.z > 302.5f || p.z < 297.5f)
+            {
+                transform.position = new Vector3(Mathf.Clamp(p.x, 297.8f, 302.2f), -49.44f, Mathf.Clamp(p.z, 297.8f, 302.2f));
+            }
+            else if (p.y < -49.445f && p.y > -49.60f)
             {
                 transform.position = new Vector3(p.x, -49.435f, p.z);
             }
@@ -273,6 +277,10 @@ namespace Task8_11
                     Vector3 updraft = Vector3.up * (1.2f + proximity * 1.5f);
                     Vector3 swirl = Vector3.Cross(Vector3.up, outDir) * 0.8f;
                     Vector3 blast = (outDir * 2.2f + updraft + swirl) * (proximity * 0.85f);
+                    if (rb.position.x > 302.35f && blast.x > 0f) blast.x = -0.2f;
+                    if (rb.position.x < 297.65f && blast.x < 0f) blast.x = 0.2f;
+                    if (rb.position.z > 302.35f && blast.z > 0f) blast.z = -0.2f;
+                    if (rb.position.z < 297.65f && blast.z < 0f) blast.z = 0.2f;
 
                     rb.AddForce(blast, ForceMode.Force);
                     rb.AddTorque(Random.insideUnitSphere * 0.08f, ForceMode.Force);
@@ -282,6 +290,21 @@ namespace Task8_11
                         rb.linearVelocity = new Vector3(rb.linearVelocity.x, -0.6f, rb.linearVelocity.z);
                     }
                 }
+            }
+
+            Vector3 curP = rb.position;
+            float cX = Mathf.Clamp(curP.x, 297.42f, 302.58f);
+            float cZ = Mathf.Clamp(curP.z, 297.42f, 302.58f);
+            float cY = Mathf.Clamp(curP.y, -49.99f, -47.95f);
+            if (curP.x != cX || curP.z != cZ || curP.y != cY)
+            {
+                rb.position = new Vector3(cX, cY, cZ);
+                Vector3 v = rb.linearVelocity;
+                if ((curP.x > 302.58f && v.x > 0f) || (curP.x < 297.42f && v.x < 0f)) v.x = -v.x * 0.2f;
+                if ((curP.z > 302.58f && v.z > 0f) || (curP.z < 297.42f && v.z < 0f)) v.z = -v.z * 0.2f;
+                if (curP.y > -47.95f && v.y > 0f) v.y = -0.5f;
+                if (curP.y < -49.99f && v.y < 0f) v.y = 0f;
+                rb.linearVelocity = v;
             }
         }
     }
