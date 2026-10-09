@@ -435,7 +435,7 @@ namespace Task8_11
 
         private void SetupRoomProps()
         {
-            var allObjs = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            var allObjs = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
             for (int i = 0; i < allObjs.Length; i++)
             {
                 if (allObjs[i].name.StartsWith("Paper_") && allObjs[i].GetComponent<PaperSheet>() == null)

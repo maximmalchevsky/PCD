@@ -478,7 +478,7 @@ namespace Task12_16
             blade.transform.localScale = new Vector3(3.2f, 0.95f, 0.35f);
             blade.GetComponent<Renderer>().sharedMaterial = matYellow;
 
-            PhysicMaterial bladeMat = new PhysicMaterial("BladePhysMat")
+            PhysicsMaterial bladeMat = new PhysicsMaterial("BladePhysMat")
             {
                 dynamicFriction = 0.2f,
                 staticFriction = 0.3f,
@@ -733,7 +733,7 @@ namespace Task12_16
             bucket.transform.localScale = new Vector3(0.95f, 0.75f, 0.95f);
             bucket.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
 
-            PhysicMaterial bucketMat = new PhysicMaterial("BucketPhysMat")
+            PhysicsMaterial bucketMat = new PhysicsMaterial("BucketPhysMat")
             {
                 dynamicFriction = 0.25f,
                 staticFriction = 0.35f,
