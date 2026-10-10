@@ -1233,7 +1233,9 @@ namespace Task12_16
             {
                 dynamicFriction = 0.2f,
                 staticFriction = 0.25f,
-                bounciness = 0f
+                bounciness = 0f,
+                bounceCombine = PhysicsMaterialCombine.Minimum,
+                frictionCombine = PhysicsMaterialCombine.Average
             };
 
             // Bed Floor (holds cargo directly on the floor with NO floating invisible colliders!)

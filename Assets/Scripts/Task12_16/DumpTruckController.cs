@@ -75,31 +75,15 @@ namespace Task12_16
 
             if (tailgate != null)
             {
-                if (currentTiltAngle > 14f)
+                if (currentTiltAngle > 4f)
                 {
-                    float swing = Mathf.Clamp((currentTiltAngle - 14f) * 1.7f, 0f, 70f);
+                    // Swing tailgate open to create a wide discharge slot at the bottom of the bed
+                    float swing = Mathf.Clamp(currentTiltAngle * 1.85f, 0f, 92f);
                     tailgate.localRotation = Quaternion.Euler(swing, 0f, 0f);
                 }
                 else
                 {
                     tailgate.localRotation = Quaternion.identity;
-                }
-            }
-
-            // Smooth cargo discharge when bed is elevated
-            if (currentTiltAngle > 14f && dumpBed != null)
-            {
-                Vector3 bedCenter = dumpBed.position + dumpBed.forward * 1.6f + Vector3.up * 0.4f;
-                Collider[] hits = Physics.OverlapSphere(bedCenter, 2.5f);
-                for (int i = 0; i < hits.Length; i++)
-                {
-                    if (hits[i] == null) continue;
-                    Rigidbody crb = hits[i].attachedRigidbody;
-                    if (crb != null && crb != rb && crb.GetComponent<GranularItem>() != null)
-                    {
-                        Vector3 slideForce = (-dumpBed.forward * 12f + Vector3.down * 6f) * (currentTiltAngle / maxTiltAngle);
-                        crb.AddForce(slideForce, ForceMode.Acceleration);
-                    }
                 }
             }
         }
@@ -146,6 +130,38 @@ namespace Task12_16
                 float rollAngle = vert * driveSpeed * Time.fixedDeltaTime * 150f;
                 RotateWheelList(frontWheels, rollAngle);
                 RotateWheelList(rearWheels, rollAngle);
+            }
+
+            // Smooth cargo discharge when bed is elevated (runs in FixedUpdate for stable physics!)
+            if (currentTiltAngle > 6f && dumpBed != null)
+            {
+                Vector3 bedCenter = dumpBed.position + dumpBed.forward * 1.6f + Vector3.up * 0.35f;
+                Collider[] hits = Physics.OverlapSphere(bedCenter, 2.6f);
+                Vector3 floorNormal = dumpBed.up;
+
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    if (hits[i] == null) continue;
+                    Rigidbody crb = hits[i].attachedRigidbody;
+                    if (crb != null && crb != rb && crb.GetComponent<GranularItem>() != null)
+                    {
+                        // Damp unwanted vertical bouncing/jumping so cargo stays flat on the floor:
+                        float normalVel = Vector3.Dot(crb.linearVelocity, floorNormal);
+                        if (normalVel > 0.05f)
+                        {
+                            crb.linearVelocity -= floorNormal * normalVel; // Cancel upward bounce off the floor
+                        }
+
+                        // Smoothly guide cargo backward along the floor plane through the open tailgate slot:
+                        Vector3 exitDir = -dumpBed.forward;
+                        float desiredSpeed = Mathf.Lerp(1.2f, 5.0f, currentTiltAngle / maxTiltAngle);
+                        Vector3 currentTangentVel = Vector3.ProjectOnPlane(crb.linearVelocity, floorNormal);
+                        Vector3 targetTangentVel = exitDir * desiredSpeed;
+                        Vector3 deltaVel = targetTangentVel - currentTangentVel;
+
+                        crb.AddForce(deltaVel * 4.0f, ForceMode.Acceleration);
+                    }
+                }
             }
         }
 

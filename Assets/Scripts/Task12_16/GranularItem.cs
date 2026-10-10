@@ -51,7 +51,7 @@ namespace Task12_16
             {
                 dynamicFriction = 0.85f,
                 staticFriction = 0.95f,
-                bounciness = 0.05f,
+                bounciness = 0.0f,
                 frictionCombine = PhysicsMaterialCombine.Maximum,
                 bounceCombine = PhysicsMaterialCombine.Minimum
             };
