@@ -21,6 +21,28 @@ namespace Task12_16
             ConfigurePhysics();
         }
 
+        void Start()
+        {
+            IgnoreVehicleChassisCollisions();
+        }
+
+        public void IgnoreVehicleChassisCollisions()
+        {
+            Collider myCol = GetComponent<Collider>();
+            if (myCol == null) return;
+
+            VehicleBase[] vehicles = Object.FindObjectsByType<VehicleBase>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                if (vehicles[i] == null) continue;
+                Collider rootCol = vehicles[i].GetComponent<Collider>();
+                if (rootCol != null)
+                {
+                    Physics.IgnoreCollision(myCol, rootCol, true);
+                }
+            }
+        }
+
         private void ConfigurePhysics()
         {
             if (rb == null) return;
@@ -65,8 +87,16 @@ namespace Task12_16
 
         void FixedUpdate()
         {
-            if (transform.position.y < -8f || Vector3.Distance(transform.position, initialPosition) > 80f)
+            // Airborne safety: ensure cargo never hangs suspended in the sky
+            if (transform.position.y > 6.0f)
             {
+                rb.isKinematic = false;
+                rb.linearVelocity = new Vector3(rb.linearVelocity.x, -6.0f, rb.linearVelocity.z);
+            }
+
+            if (transform.position.y < -4f || Vector3.Distance(transform.position, initialPosition) > 60f)
+            {
+                rb.isKinematic = false;
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
                 transform.position = initialPosition;

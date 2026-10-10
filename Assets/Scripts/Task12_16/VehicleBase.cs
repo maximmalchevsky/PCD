@@ -23,8 +23,17 @@ namespace Task12_16
             return activeVehicle;
         }
 
+        protected Rigidbody vehicleRb;
+
         protected virtual void Start()
         {
+            vehicleRb = GetComponent<Rigidbody>();
+            if (vehicleRb != null)
+            {
+                vehicleRb.isKinematic = true;
+                vehicleRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            }
+
             if (vehicleCamera != null)
             {
                 vehicleCamera.enabled = false;
@@ -74,15 +83,23 @@ namespace Task12_16
                 if (activeVehicle == null)
                 {
                     float dist = Vector3.Distance(transform.position, playerObj.transform.position);
-                    if (dist <= interactRadius && Input.GetKeyDown(KeyCode.E))
+                    if (dist <= interactRadius)
                     {
-                        EnterVehicle();
+                        bool isTargetingItem = false;
+                        var pi = Object.FindAnyObjectByType<Task8_11.PlayerInteraction>();
+                        if (pi != null && pi.IsTargetingItem()) isTargetingItem = true;
+
+                        bool wantsEnter = Input.GetKeyDown(KeyCode.F) || (!isTargetingItem && Input.GetKeyDown(KeyCode.E));
+                        if (wantsEnter)
+                        {
+                            EnterVehicle();
+                        }
                     }
                 }
             }
             else
             {
-                if (Input.GetKeyDown(KeyCode.E))
+                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.X))
                 {
                     ExitVehicle();
                 }
@@ -95,6 +112,12 @@ namespace Task12_16
 
             activeVehicle = this;
             isPlayerInside = true;
+
+            if (vehicleRb != null)
+            {
+                vehicleRb.isKinematic = false;
+                vehicleRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            }
 
             if (playerCC != null) playerCC.enabled = false;
             if (playerControllerScript != null) playerControllerScript.enabled = false;
@@ -120,6 +143,18 @@ namespace Task12_16
         {
             isPlayerInside = false;
             if (activeVehicle == this) activeVehicle = null;
+
+            if (vehicleRb != null)
+            {
+                vehicleRb.linearVelocity = Vector3.zero;
+                vehicleRb.angularVelocity = Vector3.zero;
+                vehicleRb.isKinematic = true;
+            }
+
+            if (transform.position.y > 0.35f && !(this is TowerCraneController))
+            {
+                transform.position = new Vector3(transform.position.x, 0.22f, transform.position.z);
+            }
 
             if (vehicleCamera != null)
             {
@@ -158,6 +193,10 @@ namespace Task12_16
                     float dist = Vector3.Distance(transform.position, playerObj.transform.position);
                     if (dist <= interactRadius)
                     {
+                        bool isTargetingItem = false;
+                        var pi = Object.FindAnyObjectByType<Task8_11.PlayerInteraction>();
+                        if (pi != null && pi.IsTargetingItem()) isTargetingItem = true;
+
                         GUIStyle promptStyle = new GUIStyle(GUI.skin.box)
                         {
                             fontSize = 15,
@@ -166,7 +205,8 @@ namespace Task12_16
                         };
                         promptStyle.normal.textColor = new Color(1f, 0.95f, 0.3f);
                         GUI.backgroundColor = new Color(0.1f, 0.12f, 0.18f, 0.92f);
-                        GUI.Box(new Rect(cx - 190f, Screen.height - 95f, 380f, 38f), "[E] Применить: Сесть в " + vehicleName, promptStyle);
+                        string enterKey = isTargetingItem ? "[F]" : "[F / E]";
+                        GUI.Box(new Rect(cx - 190f, Screen.height - 95f, 380f, 38f), enterKey + " Сесть в " + vehicleName, promptStyle);
                     }
                 }
             }
@@ -193,7 +233,10 @@ namespace Task12_16
             };
             guideStyle.normal.textColor = Color.white;
             GUI.backgroundColor = new Color(0.08f, 0.1f, 0.14f, 0.88f);
-            GUI.Box(new Rect(cx - 360f, Screen.height - 110f, 720f, 48f), controlGuide, guideStyle);
+            int lineCount = controlGuide.Split('\n').Length;
+            float boxHeight = Mathf.Max(48f, lineCount * 22f + 14f);
+            float boxY = Screen.height - 58f - boxHeight;
+            GUI.Box(new Rect(cx - 380f, boxY, 760f, boxHeight), controlGuide, guideStyle);
 
             GUIStyle exitStyle = new GUIStyle(GUI.skin.box)
             {
@@ -203,7 +246,7 @@ namespace Task12_16
             };
             exitStyle.normal.textColor = new Color(0.9f, 0.95f, 1f);
             GUI.backgroundColor = new Color(0.4f, 0.1f, 0.1f, 0.88f);
-            GUI.Box(new Rect(cx - 160f, Screen.height - 54f, 320f, 26f), "[E] Применить: Выйти из кабины", exitStyle);
+            GUI.Box(new Rect(cx - 180f, Screen.height - 54f, 360f, 26f), "[Escape / X] Выйти из кабины", exitStyle);
         }
     }
 }

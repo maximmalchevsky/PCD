@@ -25,10 +25,12 @@ namespace Task12_16
             rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.mass = 8500f;
-                rb.linearDamping = 1.5f;
-                rb.angularDamping = 3.0f;
-                rb.centerOfMass = new Vector3(0f, -0.4f, 0f);
+                rb.mass = 9500f;
+                rb.linearDamping = 2.0f;
+                rb.angularDamping = 4.0f;
+                rb.centerOfMass = new Vector3(0f, -0.6f, 0f);
+                rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+                rb.isKinematic = true;
             }
 
             if (bladeTransform != null)
@@ -42,7 +44,19 @@ namespace Task12_16
         {
             base.Update();
 
-            if (!isPlayerInside) return;
+            if (!isPlayerInside)
+            {
+                if (transform.position.y > 0.35f)
+                {
+                    transform.position = new Vector3(transform.position.x, 0.22f, transform.position.z);
+                    if (rb != null)
+                    {
+                        rb.linearVelocity = Vector3.zero;
+                        rb.angularVelocity = Vector3.zero;
+                    }
+                }
+                return;
+            }
 
             if (Input.GetKey(KeyCode.R))
             {
@@ -65,11 +79,30 @@ namespace Task12_16
         {
             if (!isPlayerInside || rb == null) return;
 
-            float vert = Input.GetAxis("Vertical");
-            float horiz = Input.GetAxis("Horizontal");
+            // Strict upright stabilization: guarantee zero pitch and zero roll
+            Vector3 euler = transform.eulerAngles;
+            rb.rotation = Quaternion.Euler(0f, euler.y, 0f);
+            rb.angularVelocity = new Vector3(0f, rb.angularVelocity.y, 0f);
+
+            float clampedVy = Mathf.Min(0f, rb.linearVelocity.y);
+            if (transform.position.y > 0.35f)
+            {
+                transform.position = new Vector3(transform.position.x, 0.22f, transform.position.z);
+                clampedVy = 0f;
+            }
+
+            float vert = 0f;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) vert += 1f;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) vert -= 1f;
+            if (Mathf.Abs(vert) < 0.01f) vert = Input.GetAxis("Vertical");
+
+            float horiz = 0f;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) horiz -= 1f;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) horiz += 1f;
+            if (Mathf.Abs(horiz) < 0.01f) horiz = Input.GetAxis("Horizontal");
 
             Vector3 moveTarget = transform.forward * (vert * driveSpeed);
-            rb.linearVelocity = new Vector3(moveTarget.x, rb.linearVelocity.y, moveTarget.z);
+            rb.linearVelocity = new Vector3(moveTarget.x, clampedVy, moveTarget.z);
 
             if (Mathf.Abs(horiz) > 0.01f)
             {

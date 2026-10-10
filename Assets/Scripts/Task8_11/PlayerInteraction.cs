@@ -204,7 +204,7 @@ namespace Task8_11
                 }
                 else
                 {
-                    currentPrompt = "[E] Взять: " + bestItem.itemName;
+                    currentPrompt = "[E] Взять в руки: " + bestItem.itemName;
                     if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
                     {
                         string reason;
@@ -310,7 +310,7 @@ namespace Task8_11
                 return;
             }
 
-            currentPrompt = "[E] Поставить | [Q / ПКМ] Бросить";
+            currentPrompt = "[E] Положить | [Q / ПКМ] Бросить / Загрузить";
 
             float holdDist = heldItem.rb.mass > 10f ? 1.4f : 0.85f;
             Vector3 targetPos = playerCamera.transform.position + playerCamera.transform.forward * holdDist + playerCamera.transform.up * -0.15f;
@@ -419,17 +419,29 @@ namespace Task8_11
                 helpStyle.padding = new RectOffset(10, 10, 8, 8);
 
                 GUI.backgroundColor = new Color(0.08f, 0.12f, 0.2f, 0.82f);
-                string helpText = "УПРАВЛЕНИЕ В КОМНАТЕ:\n" +
-                                  "• Дверной порог со светом — [E] Переход город / комната\n" +
-                                  "• [E] или ЛКМ — Взять предмет / Нажать выключатель\n" +
-                                  "• [Q] или ПКМ — Бросить предмет в руках\n" +
-                                  "• [F] — Открыть / закрыть шкаф или дверь\n" +
-                                  "• [T] — Включить / выключить вентилятор\n" +
-                                  "• [J] — Открыть / закрыть жалюзи на окне\n" +
-                                  "• [L] — Выключатель света\n" +
-                                  "• [H] — Скрыть / показать эту подсказку";
-
-                GUI.Box(new Rect(15f, 15f, 340f, 170f), helpText, helpStyle);
+                string helpText;
+                if (transform.position.y > 60f)
+                {
+                    helpText = "УПРАВЛЕНИЕ В КОМНАТЕ:\n" +
+                               "• Дверной порог со светом — [E] Переход город / комната\n" +
+                               "• [E] или ЛКМ — Взять предмет / Нажать выключатель\n" +
+                               "• [Q] или ПКМ — Бросить предмет в руках\n" +
+                               "• [F] — Открыть / закрыть шкаф или дверь\n" +
+                               "• [T] — Включить / выключить вентилятор\n" +
+                               "• [J] — Открыть / закрыть жалюзи на окне\n" +
+                               "• [L] — Выключатель света\n" +
+                               "• [H] — Скрыть / показать эту подсказку";
+                    GUI.Box(new Rect(15f, 15f, 340f, 170f), helpText, helpStyle);
+                }
+                else
+                {
+                    helpText = "УПРАВЛЕНИЕ:\n" +
+                               "• [E] или ЛКМ — Взять предмет в руки (камни, кирпичи, песок)\n" +
+                               "• [Q] или ПКМ — Бросить / Загрузить в кузов или ковш\n" +
+                               "• [F] — Сесть в технику (экскаватор, кран, самосвал, бульдозер)\n" +
+                               "• [H] — Скрыть / показать подсказку";
+                    GUI.Box(new Rect(15f, 15f, 380f, 115f), helpText, helpStyle);
+                }
             }
         }
 

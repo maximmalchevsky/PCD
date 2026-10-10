@@ -62,6 +62,7 @@ namespace Task6_7
                         clone.transform.position = origRoot.transform.position + offset;
 
                         StripHousePortalsFromClone(clone);
+                        RemoveClonesInConstructionZone(clone);
                     }
                 }
 
@@ -70,6 +71,43 @@ namespace Task6_7
             }
 
             ExpandTrafficSystem();
+        }
+
+        public static bool IsInConstructionZone(Vector3 pos)
+        {
+            return pos.x >= -75f && pos.x <= -25f && pos.z >= -5f && pos.z <= 45f;
+        }
+
+        private void RemoveClonesInConstructionZone(GameObject clone)
+        {
+            if (clone == null) return;
+            Bounds zoneBounds = new Bounds(new Vector3(-50f, 10f, 20f), new Vector3(50f, 40f, 50f));
+            List<GameObject> toDestroy = new List<GameObject>();
+            for (int i = 0; i < clone.transform.childCount; i++)
+            {
+                Transform child = clone.transform.GetChild(i);
+                bool inside = IsInConstructionZone(child.position);
+                if (!inside)
+                {
+                    Renderer[] rends = child.GetComponentsInChildren<Renderer>(true);
+                    for (int r = 0; r < rends.Length; r++)
+                    {
+                        if (rends[r] != null && (zoneBounds.Intersects(rends[r].bounds) || IsInConstructionZone(rends[r].bounds.center)))
+                        {
+                            inside = true;
+                            break;
+                        }
+                    }
+                }
+                if (inside)
+                {
+                    toDestroy.Add(child.gameObject);
+                }
+            }
+            for (int i = 0; i < toDestroy.Count; i++)
+            {
+                DestroyImmediate(toDestroy[i]);
+            }
         }
 
         private void ExpandGround()
@@ -112,13 +150,26 @@ namespace Task6_7
             for (int i = 0; i < clonedRoutes.Length; i++)
             {
                 Transform r = clonedRoutes[i];
-                if (r == clonedWpRoot.transform || r.parent != clonedWpRoot.transform) continue;
+                if (r == null || r == clonedWpRoot.transform || r.parent != clonedWpRoot.transform) continue;
 
+                bool entersConstructionZone = false;
                 List<Transform> wpList = new List<Transform>();
                 for (int w = 0; w < r.childCount; w++)
                 {
-                    wpList.Add(r.GetChild(w));
+                    Transform wp = r.GetChild(w);
+                    wpList.Add(wp);
+                    if (IsInConstructionZone(wp.position))
+                    {
+                        entersConstructionZone = true;
+                    }
                 }
+
+                if (entersConstructionZone)
+                {
+                    DestroyImmediate(r.gameObject);
+                    continue;
+                }
+
                 if (wpList.Count >= 2)
                 {
                     tm.routes.Add(new CarRoute(wpList.ToArray()));
@@ -138,11 +189,13 @@ namespace Task6_7
                 clonedPedWpRoot = Instantiate(origPedWp, parent.transform);
                 clonedPedWpRoot.name = origPedWp.name + "_Clone";
                 clonedPedWpRoot.transform.position = origPedWp.transform.position + offset;
+                RemoveClonesInConstructionZone(clonedPedWpRoot);
             }
 
             GameObject clonedCharsRoot = Instantiate(origChars, parent.transform);
             clonedCharsRoot.name = origChars.name + "_Clone";
             clonedCharsRoot.transform.position = origChars.transform.position + offset;
+            RemoveClonesInConstructionZone(clonedCharsRoot);
 
             if (clonedPedWpRoot != null)
             {
@@ -150,6 +203,12 @@ namespace Task6_7
                 for (int i = 0; i < agents.Length; i++)
                 {
                     PedestrianAgent pa = agents[i];
+                    if (pa == null) continue;
+                    if (IsInConstructionZone(pa.transform.position))
+                    {
+                        DestroyImmediate(pa.gameObject);
+                        continue;
+                    }
                     if (pa.waypoints != null && pa.waypoints.Length > 0)
                     {
                         List<Transform> newWps = new List<Transform>();

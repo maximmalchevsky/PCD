@@ -36,6 +36,16 @@ namespace Task6_7
 
         void Update()
         {
+            if (transform.position.x >= -75f && transform.position.x <= -25f && transform.position.z >= -5f && transform.position.z <= 45f)
+            {
+                if (TrafficManager.Instance != null)
+                {
+                    TrafficManager.Instance.OnCarExited(gameObject);
+                }
+                Destroy(gameObject);
+                return;
+            }
+
             if (waypoints == null || waypoints.Length == 0) return;
 
             if (currentWaypointIndex >= waypoints.Length)

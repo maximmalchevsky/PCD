@@ -29,33 +29,81 @@ namespace Task6_7
         private List<GameObject> activeCars = new List<GameObject>();
         private float spawnTimer = 0f;
 
+        public static bool IsInConstructionZone(Vector3 pos)
+        {
+            return pos.x >= -74f && pos.x <= -26f && pos.z >= -4f && pos.z <= 44f;
+        }
+
+        public bool IsRouteValid(CarRoute cr)
+        {
+            if (cr == null || cr.waypoints == null || cr.waypoints.Length < 2) return false;
+            foreach (var wp in cr.waypoints)
+            {
+                if (wp == null) return false;
+                if (!wp.gameObject.activeInHierarchy) return false;
+                if (wp.parent != null && !wp.parent.gameObject.activeInHierarchy) return false;
+                if (IsInConstructionZone(wp.position)) return false;
+            }
+            return true;
+        }
+
+        public void PurgeInvalidRoutes()
+        {
+            if (routes != null)
+            {
+                routes.RemoveAll(r => !IsRouteValid(r));
+            }
+        }
+
         void Awake()
         {
             Instance = this;
+            PurgeInvalidRoutes();
         }
 
         void Start()
         {
+            PurgeInvalidRoutes();
+
             CarAgent[] existing = Object.FindObjectsByType<CarAgent>(FindObjectsInactive.Exclude);
             foreach (var ca in existing)
             {
-                if (ca != null && !activeCars.Contains(ca.gameObject))
+                if (ca != null)
                 {
-                    activeCars.Add(ca.gameObject);
+                    if (IsInConstructionZone(ca.transform.position))
+                    {
+                        Destroy(ca.gameObject);
+                    }
+                    else if (!activeCars.Contains(ca.gameObject))
+                    {
+                        activeCars.Add(ca.gameObject);
+                    }
                 }
             }
 
             if (routes == null || routes.Count == 0 || carPrefabs == null || carPrefabs.Length == 0) return;
 
-            while (activeCars.Count < Mathf.Min(8, maxActiveCars))
+            int safetyLoop = 0;
+            while (activeCars.Count < Mathf.Min(8, maxActiveCars) && routes.Count > 0 && safetyLoop < 40)
             {
+                safetyLoop++;
                 int rIdx = activeCars.Count % routes.Count;
                 CarRoute cr = routes[rIdx];
-                if (cr == null || cr.waypoints == null || cr.waypoints.Length < 2) break;
+                if (!IsRouteValid(cr))
+                {
+                    routes.RemoveAt(rIdx);
+                    continue;
+                }
 
                 Transform[] route = cr.waypoints;
                 int midIdx = Mathf.Clamp(route.Length / 3, 0, route.Length - 1);
                 Vector3 spawnPos = route[midIdx].position;
+
+                if (IsInConstructionZone(spawnPos))
+                {
+                    routes.RemoveAt(rIdx);
+                    continue;
+                }
 
                 Collider[] cols = Physics.OverlapSphere(spawnPos, 5f);
                 bool blocked = false;
@@ -63,7 +111,7 @@ namespace Task6_7
                 {
                     if (c.GetComponentInParent<CarAgent>() != null) { blocked = true; break; }
                 }
-                if (blocked) break;
+                if (blocked) continue;
 
                 GameObject prefab = carPrefabs[activeCars.Count % carPrefabs.Length];
                 SpawnCar(prefab, route, midIdx);
@@ -72,7 +120,18 @@ namespace Task6_7
 
         void Update()
         {
-            activeCars.RemoveAll(c => c == null);
+            for (int i = activeCars.Count - 1; i >= 0; i--)
+            {
+                if (activeCars[i] == null)
+                {
+                    activeCars.RemoveAt(i);
+                }
+                else if (IsInConstructionZone(activeCars[i].transform.position))
+                {
+                    Destroy(activeCars[i]);
+                    activeCars.RemoveAt(i);
+                }
+            }
 
             spawnTimer += Time.deltaTime;
             if (activeCars.Count < maxActiveCars && spawnTimer >= spawnInterval)
@@ -84,14 +143,21 @@ namespace Task6_7
 
         private void TrySpawnAtEntrance()
         {
+            PurgeInvalidRoutes();
             if (routes == null || routes.Count == 0 || carPrefabs == null || carPrefabs.Length == 0) return;
 
             int randomRouteIdx = Random.Range(0, routes.Count);
             CarRoute cr = routes[randomRouteIdx];
-            if (cr == null || cr.waypoints == null || cr.waypoints.Length < 2) return;
+            if (!IsRouteValid(cr))
+            {
+                routes.RemoveAt(randomRouteIdx);
+                return;
+            }
 
             Transform[] route = cr.waypoints;
             Vector3 startPos = route[0].position;
+            if (IsInConstructionZone(startPos)) return;
+
             Collider[] cols = Physics.OverlapSphere(startPos, 7f);
             foreach (var c in cols)
             {
@@ -107,6 +173,8 @@ namespace Task6_7
             if (prefab == null || route == null || route.Length == 0) return;
 
             Vector3 pos = route[startWaypointIndex].position;
+            if (IsInConstructionZone(pos)) return;
+
             Vector3 nextPos = route[Mathf.Min(startWaypointIndex + 1, route.Length - 1)].position;
             Vector3 dir = (nextPos - pos).normalized;
             Quaternion rot = dir != Vector3.zero ? Quaternion.LookRotation(dir) : Quaternion.identity;
