@@ -85,11 +85,7 @@ namespace Task12_16
                     float dist = Vector3.Distance(transform.position, playerObj.transform.position);
                     if (dist <= interactRadius)
                     {
-                        bool isTargetingItem = false;
-                        var pi = Object.FindAnyObjectByType<Task8_11.PlayerInteraction>();
-                        if (pi != null && pi.IsTargetingItem()) isTargetingItem = true;
-
-                        bool wantsEnter = Input.GetKeyDown(KeyCode.F) || (!isTargetingItem && Input.GetKeyDown(KeyCode.E));
+                        bool wantsEnter = Input.GetKeyDown(KeyCode.F);
                         if (wantsEnter)
                         {
                             EnterVehicle();
@@ -112,6 +108,10 @@ namespace Task12_16
 
             activeVehicle = this;
             isPlayerInside = true;
+
+            // Disable player room interaction script so room hotkeys (T, J, L, E, Q) do not conflict with vehicle controls
+            var pi = Object.FindAnyObjectByType<Task8_11.PlayerInteraction>();
+            if (pi != null) pi.enabled = false;
 
             if (vehicleRb != null)
             {
@@ -180,6 +180,10 @@ namespace Task12_16
             if (playerCamera != null) playerCamera.enabled = true;
             if (playerControllerScript != null) playerControllerScript.enabled = true;
             if (playerCC != null) playerCC.enabled = true;
+
+            // Re-enable player room interaction script
+            var pi = Object.FindAnyObjectByType<Task8_11.PlayerInteraction>();
+            if (pi != null) pi.enabled = true;
         }
 
         protected virtual void OnGUI()
@@ -193,10 +197,6 @@ namespace Task12_16
                     float dist = Vector3.Distance(transform.position, playerObj.transform.position);
                     if (dist <= interactRadius)
                     {
-                        bool isTargetingItem = false;
-                        var pi = Object.FindAnyObjectByType<Task8_11.PlayerInteraction>();
-                        if (pi != null && pi.IsTargetingItem()) isTargetingItem = true;
-
                         GUIStyle promptStyle = new GUIStyle(GUI.skin.box)
                         {
                             fontSize = 15,
@@ -205,8 +205,7 @@ namespace Task12_16
                         };
                         promptStyle.normal.textColor = new Color(1f, 0.95f, 0.3f);
                         GUI.backgroundColor = new Color(0.1f, 0.12f, 0.18f, 0.92f);
-                        string enterKey = isTargetingItem ? "[F]" : "[F / E]";
-                        GUI.Box(new Rect(cx - 190f, Screen.height - 95f, 380f, 38f), enterKey + " Сесть в " + vehicleName, promptStyle);
+                        GUI.Box(new Rect(cx - 190f, Screen.height - 95f, 380f, 38f), "[F] Сесть в " + vehicleName, promptStyle);
                     }
                 }
             }

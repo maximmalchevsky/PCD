@@ -68,6 +68,43 @@ namespace Task12_16
             }
         }
 
+        public static Mesh LoadResourceMesh(string resourceName)
+        {
+            try
+            {
+                GameObject go = Resources.Load<GameObject>(resourceName);
+                if (go != null)
+                {
+                    MeshFilter mf = go.GetComponentInChildren<MeshFilter>();
+                    if (mf != null && mf.sharedMesh != null) return mf.sharedMesh;
+                }
+                Mesh m = Resources.Load<Mesh>(resourceName);
+                if (m != null) return m;
+            }
+            catch { }
+            return null;
+        }
+
+        public static void AddBoxBetween(List<Vector3> verts, List<Vector3> norms, List<Vector2> uvs, List<int> tris,
+            Vector3 p1, Vector3 p2, float width, float thickness)
+        {
+            Vector3 delta = p2 - p1;
+            float length = delta.magnitude;
+            if (length < 0.0001f) return;
+
+            Vector3 center = (p1 + p2) * 0.5f;
+            Vector3 forward = delta / length;
+
+            Vector3 up = Vector3.up;
+            if (Mathf.Abs(Vector3.Dot(forward, up)) > 0.95f) up = Vector3.forward;
+
+            Vector3 right = Vector3.Cross(up, forward).normalized;
+            up = Vector3.Cross(forward, right).normalized;
+
+            Quaternion rot = Quaternion.LookRotation(forward, up);
+            AddBox(verts, norms, uvs, tris, center, new Vector3(width, thickness, length), rot);
+        }
+
         public static void AddCylinder(List<Vector3> verts, List<Vector3> norms, List<Vector2> uvs, List<int> tris,
             Vector3 center, float radius, float height, int segments, Quaternion rot)
         {
@@ -217,6 +254,9 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorUndercarriageMesh()
         {
+            Mesh res = LoadResourceMesh("excavator-tracks");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -292,6 +332,9 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorCabMesh()
         {
+            Mesh res = LoadResourceMesh("excavator-cab");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -389,48 +432,40 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorBoomMesh()
         {
+            Mesh res = LoadResourceMesh("excavator-boom");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
             List<int> tris = new List<int>();
 
-            // Curved mono-boom box section constructed via 3 angled box segments:
-            // Segment 1: Lower root boom from foot pin rising up and forwards
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0.85f, 0.65f), new Vector3(0.54f, 0.65f, 2.0f), Quaternion.Euler(-55f, 0f, 0f));
-            // Segment 2: Upper main arched boom sloping gently forward
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, 2.30f, 2.05f), new Vector3(0.48f, 0.58f, 2.5f), Quaternion.Euler(-18f, 0f, 0f));
-            // Segment 3: Boom tip nose pointing towards stick hinge
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, 3.25f, 3.55f), new Vector3(0.42f, 0.52f, 1.8f), Quaternion.Euler(22f, 0f, 0f));
+            // Foot pin boss at (0, 0, 0)
+            AddCylinder(verts, norms, uvs, tris, Vector3.zero, 0.20f, 0.52f, 18, Quaternion.Euler(0f, 0f, 90f));
 
-            // Main boom foot mounting pin hub
-            AddCylinder(verts, norms, uvs, tris, Vector3.zero, 0.22f, 0.62f, 18, Quaternion.Euler(0f, 0f, 90f));
-            // Stick pivot pin hub at boom tip
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 3.65f, 4.35f), 0.18f, 0.48f, 16, Quaternion.Euler(0f, 0f, 90f));
+            // Continuous curved mono-boom box beam segments:
+            // Segment 1: Foot pin (0,0,0) -> Elbow arch (0, 1.8f, 1.2f)
+            Vector3 pFoot = Vector3.zero;
+            Vector3 pElbow = new Vector3(0f, 1.8f, 1.2f);
+            AddBoxBetween(verts, norms, uvs, tris, pFoot, pElbow, 0.50f, 0.65f);
 
-            // Boom side welded stiffener flanges & gusset plates
-            AddBox(verts, norms, uvs, tris, new Vector3(-0.28f, 2.0f, 1.8f), new Vector3(0.04f, 0.45f, 3.2f), Quaternion.Euler(-24f, 0f, 0f));
-            AddBox(verts, norms, uvs, tris, new Vector3( 0.28f, 2.0f, 1.8f), new Vector3(0.04f, 0.45f, 3.2f), Quaternion.Euler(-24f, 0f, 0f));
+            // Segment 2: Elbow arch -> Tip pin (0, 2.6f, 3.2f)
+            Vector3 pTip = new Vector3(0f, 2.6f, 3.2f);
+            AddBoxBetween(verts, norms, uvs, tris, pElbow, pTip, 0.44f, 0.58f);
 
-            // Twin Boom Hydraulic Lift Cylinders (chrome rods & barrels)
-            float[] cylX = new float[] { -0.36f, 0.36f };
-            for (int c = 0; c < 2; c++)
+            // Tip pin boss at (0, 2.6f, 3.2f)
+            AddCylinder(verts, norms, uvs, tris, pTip, 0.18f, 0.46f, 18, Quaternion.Euler(0f, 0f, 90f));
+
+            // Stiffener flanges along the boom sides
+            float[] sx = new float[] { -0.26f, 0.26f };
+            for (int i = 0; i < 2; i++)
             {
-                // Barrel
-                AddCylinder(verts, norms, uvs, tris, new Vector3(cylX[c], 0.65f, 0.60f), 0.12f, 1.35f, 14, Quaternion.Euler(34f, 0f, 0f));
-                // Chrome piston rod
-                AddCylinder(verts, norms, uvs, tris, new Vector3(cylX[c], 1.25f, 1.02f), 0.07f, 1.15f, 14, Quaternion.Euler(34f, 0f, 0f));
+                AddBoxBetween(verts, norms, uvs, tris, new Vector3(sx[i], 0.2f, 0.15f), new Vector3(sx[i], 1.7f, 1.2f), 0.03f, 0.45f);
+                AddBoxBetween(verts, norms, uvs, tris, new Vector3(sx[i], 1.7f, 1.2f), new Vector3(sx[i], 2.5f, 3.1f), 0.03f, 0.42f);
             }
 
-            // Hydraulic pipe conduits along top of boom
-            AddCylinder(verts, norms, uvs, tris, new Vector3(-0.16f, 2.15f, 1.85f), 0.03f, 3.4f, 8, Quaternion.Euler(-26f, 0f, 0f));
-            AddCylinder(verts, norms, uvs, tris, new Vector3( 0.16f, 2.15f, 1.85f), 0.03f, 3.4f, 8, Quaternion.Euler(-26f, 0f, 0f));
-
-            // Stick Hydraulic Cylinder mounted on top of boom arch
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 2.95f, 1.95f), 0.13f, 1.6f, 14, Quaternion.Euler(-8f, 0f, 0f));
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 3.25f, 2.95f), 0.08f, 1.3f, 14, Quaternion.Euler(-8f, 0f, 0f));
-
-            // Boom worklight facing work area
-            AddBox(verts, norms, uvs, tris, new Vector3(0.32f, 2.45f, 2.2f), new Vector3(0.18f, 0.18f, 0.15f), Quaternion.identity);
+            // Boom top worklight
+            AddBox(verts, norms, uvs, tris, new Vector3(0.30f, 2.2f, 1.8f), new Vector3(0.18f, 0.16f, 0.14f), Quaternion.identity);
 
             Mesh mesh = new Mesh();
             mesh.name = "Mesh_Excavator_Boom";
@@ -447,29 +482,34 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorStickMesh()
         {
+            Mesh res = LoadResourceMesh("excavator-stick");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
             List<int> tris = new List<int>();
 
-            // Stick arm main box beam (tapered from boom hinge to bucket hinge)
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0.15f, 1.95f), new Vector3(0.44f, 0.52f, 4.3f), Quaternion.Euler(38f, 0f, 0f));
+            Vector3 pTop = Vector3.zero;
+            Vector3 pBtm = new Vector3(0f, -2.4f, 1.8f);
 
-            // Boom attachment pin boss
-            AddCylinder(verts, norms, uvs, tris, Vector3.zero, 0.18f, 0.48f, 16, Quaternion.Euler(0f, 0f, 90f));
-            // Bucket attachment pin boss at tip
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, -1.05f, 3.55f), 0.16f, 0.44f, 16, Quaternion.Euler(0f, 0f, 90f));
+            // Top hinge pin boss at (0, 0, 0)
+            AddCylinder(verts, norms, uvs, tris, pTop, 0.18f, 0.44f, 18, Quaternion.Euler(0f, 0f, 90f));
 
-            // Underside protective steel wear runner plate
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, -0.15f, 2.05f), new Vector3(0.46f, 0.05f, 3.8f), Quaternion.Euler(38f, 0f, 0f));
+            // Main dipper stick box beam
+            AddBoxBetween(verts, norms, uvs, tris, pTop, pBtm, 0.42f, 0.48f);
 
-            // Bucket Hydraulic Curl Cylinder mounted on top of the stick
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 0.65f, 1.45f), 0.12f, 1.45f, 14, Quaternion.Euler(36f, 0f, 0f));
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 0.25f, 2.35f), 0.07f, 1.25f, 14, Quaternion.Euler(36f, 0f, 0f));
+            // Bottom bucket hinge pin boss at (0, -2.4f, 1.8f)
+            AddCylinder(verts, norms, uvs, tris, pBtm, 0.16f, 0.42f, 18, Quaternion.Euler(0f, 0f, 90f));
 
-            // 4-Bar Tipping Linkage (Dogbone guide link & H-link)
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, -0.45f, 3.10f), new Vector3(0.28f, 0.14f, 0.75f), Quaternion.Euler(60f, 0f, 0f));
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, -0.65f, 3.35f), 0.08f, 0.32f, 12, Quaternion.Euler(0f, 0f, 90f));
+            // Underside wear runner plate
+            Vector3 pTopWear = new Vector3(0f, -0.22f, -0.05f);
+            Vector3 pBtmWear = new Vector3(0f, -2.48f, 1.65f);
+            AddBoxBetween(verts, norms, uvs, tris, pTopWear, pBtmWear, 0.44f, 0.06f);
+
+            // Hydraulic curl cylinder attached on stick back
+            AddBoxBetween(verts, norms, uvs, tris, new Vector3(0f, 0.45f, 0.4f), new Vector3(0f, -0.95f, 1.45f), 0.16f, 0.16f);
+            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, -0.95f, 1.45f), 0.08f, 0.35f, 12, Quaternion.Euler(0f, 0f, 90f));
 
             Mesh mesh = new Mesh();
             mesh.name = "Mesh_Excavator_Stick";
@@ -486,73 +526,53 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorBucketMesh()
         {
+            Mesh res = LoadResourceMesh("excavator-bucket");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
             List<int> tris = new List<int>();
 
-            // Curved back shell of bucket (formed by 6 cylindrical-curved segments)
-            float bWidth = 1.60f;
-            float bRadius = 0.65f;
-            int segments = 8;
-            float startAngle = -35f * Mathf.Deg2Rad;
-            float endAngle = 135f * Mathf.Deg2Rad;
+            // Bucket hinge pin boss at (0, 0, 0)
+            AddCylinder(verts, norms, uvs, tris, Vector3.zero, 0.15f, 0.40f, 16, Quaternion.Euler(0f, 0f, 90f));
 
-            for (int i = 0; i < segments; i++)
+            // Curved back shell of bucket
+            Vector3[] curve = new Vector3[]
             {
-                float a1 = Mathf.Lerp(startAngle, endAngle, (float)i / segments);
-                float a2 = Mathf.Lerp(startAngle, endAngle, (float)(i + 1) / segments);
-
-                Vector3 p1 = new Vector3(0f, -Mathf.Cos(a1) * bRadius, Mathf.Sin(a1) * bRadius);
-                Vector3 p2 = new Vector3(0f, -Mathf.Cos(a2) * bRadius, Mathf.Sin(a2) * bRadius);
-
-                Vector3 segCenter = (p1 + p2) * 0.5f;
-                Vector3 segDelta = p2 - p1;
-                float segLen = segDelta.magnitude;
-                Quaternion segRot = Quaternion.LookRotation(segDelta, Vector3.Cross(segDelta, Vector3.right));
-
-                AddBox(verts, norms, uvs, tris, segCenter, new Vector3(bWidth, 0.08f, segLen), segRot);
+                new Vector3(0f,  0.08f, -0.22f),
+                new Vector3(0f, -0.25f, -0.36f),
+                new Vector3(0f, -0.58f, -0.15f),
+                new Vector3(0f, -0.62f,  0.25f),
+                new Vector3(0f, -0.52f,  0.65f),
+                new Vector3(0f, -0.42f,  0.88f)
+            };
+            float width = 1.55f;
+            for (int i = 0; i < curve.Length - 1; i++)
+            {
+                AddBoxBetween(verts, norms, uvs, tris, curve[i], curve[i + 1], width, 0.08f);
             }
 
-            // Left and Right Cheek Cutting Side Plates
-            float[] cheekX = new float[] { -bWidth * 0.5f - 0.03f, bWidth * 0.5f + 0.03f };
-            for (int s = 0; s < 2; s++)
+            // Left & Right cheek plates
+            float[] cheeks = new float[] { -width * 0.5f - 0.02f, width * 0.5f + 0.02f };
+            for (int c = 0; c < 2; c++)
             {
-                float cx = cheekX[s];
-                // Side plate
-                AddBox(verts, norms, uvs, tris, new Vector3(cx, -0.15f, 0.25f), new Vector3(0.06f, 0.95f, 1.15f), Quaternion.identity);
-                // Side cutter teeth on outside of cheeks
-                AddBox(verts, norms, uvs, tris, new Vector3(cx, -0.38f, 0.70f), new Vector3(0.08f, 0.18f, 0.26f), Quaternion.identity);
+                float cx = cheeks[c];
+                AddBoxBetween(verts, norms, uvs, tris, new Vector3(cx, -0.25f, 0.05f), new Vector3(cx, -0.25f, 0.55f), 0.05f, 0.70f);
+                AddBoxBetween(verts, norms, uvs, tris, new Vector3(cx, -0.45f, 0.65f), new Vector3(cx, -0.45f, 0.88f), 0.07f, 0.16f);
             }
 
-            // Bottom wear runner skids (underside wear plates)
-            for (int w = 0; w < 4; w++)
-            {
-                float wx = -0.55f + w * 0.36f;
-                AddBox(verts, norms, uvs, tris, new Vector3(wx, -bRadius - 0.03f, 0.15f), new Vector3(0.08f, 0.04f, 0.95f), Quaternion.identity);
-            }
+            // Front cutting lip
+            AddBoxBetween(verts, norms, uvs, tris, new Vector3(0f, -0.42f, 0.82f), new Vector3(0f, -0.42f, 0.92f), width + 0.06f, 0.10f);
 
-            // Front Cutting Lip Plate
-            Vector3 lipPos = new Vector3(0f, -0.42f, 0.62f);
-            AddBox(verts, norms, uvs, tris, lipPos, new Vector3(bWidth + 0.08f, 0.10f, 0.22f), Quaternion.Euler(15f, 0f, 0f));
-
-            // 5 Heavy Digging Teeth with cast adapters
+            // 5 Digging Teeth on front lip
             for (int t = 0; t < 5; t++)
             {
-                float tx = -0.62f + t * 0.31f;
-                Vector3 toothBase = new Vector3(tx, -0.44f, 0.74f);
-
-                // Tooth adapter shank
-                AddBox(verts, norms, uvs, tris, toothBase, new Vector3(0.14f, 0.14f, 0.18f), Quaternion.Euler(22f, 0f, 0f));
-                // Tooth wedge chisel point
-                AddWedge(verts, norms, uvs, tris, toothBase + new Vector3(0f, -0.05f, 0.16f), new Vector3(0.12f, 0.12f, 0.26f), Quaternion.Euler(112f, 0f, 0f));
+                float tx = -0.60f + t * 0.30f;
+                Vector3 pRoot = new Vector3(tx, -0.42f, 0.90f);
+                Vector3 pToothTip = new Vector3(tx, -0.46f, 1.15f);
+                AddBoxBetween(verts, norms, uvs, tris, pRoot, pToothTip, 0.12f, 0.12f);
             }
-
-            // Bucket top mounting ears and pin bosses (connecting to stick and linkage)
-            AddBox(verts, norms, uvs, tris, new Vector3(-0.25f, 0.25f, -0.15f), new Vector3(0.06f, 0.45f, 0.55f), Quaternion.identity);
-            AddBox(verts, norms, uvs, tris, new Vector3( 0.25f, 0.25f, -0.15f), new Vector3(0.06f, 0.45f, 0.55f), Quaternion.identity);
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 0.32f, -0.22f), 0.12f, 0.58f, 14, Quaternion.Euler(0f, 0f, 90f));
-            AddCylinder(verts, norms, uvs, tris, new Vector3(0f, 0.32f,  0.08f), 0.12f, 0.58f, 14, Quaternion.Euler(0f, 0f, 90f));
 
             Mesh mesh = new Mesh();
             mesh.name = "Mesh_Excavator_Bucket";
@@ -569,6 +589,9 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateClayBrickMesh()
         {
+            Mesh res = LoadResourceMesh("brick-gost");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -603,6 +626,9 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateConcreteBlockFBSMesh()
         {
+            Mesh res = LoadResourceMesh("block-fbs");
+            if (res != null) return res;
+
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();

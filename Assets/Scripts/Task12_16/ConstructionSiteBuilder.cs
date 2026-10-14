@@ -814,7 +814,7 @@ namespace Task12_16
             // 1. PRIMARY EXCAVATION TRENCH (directly in front of excavator bucket reach!)
             for (int i = 0; i < 22; i++)
             {
-                float rx = Random.Range(1.4f, 3.8f);
+                float rx = Random.Range(-3.0f, 0.2f);
                 float rz = Random.Range(3.4f, 6.6f);
                 float ry = Random.Range(0.24f, 0.44f);
                 CreateSoilChunk("Soil_Chunk_" + i, cargoRoot.transform, new Vector3(rx, ry, rz), Random.rotation, i + 1, Random.Range(0.40f, 0.55f));
@@ -822,7 +822,7 @@ namespace Task12_16
 
             for (int i = 0; i < 14; i++)
             {
-                float rx = Random.Range(1.4f, 3.8f);
+                float rx = Random.Range(-3.0f, 0.2f);
                 float rz = Random.Range(3.4f, 6.6f);
                 float ry = Random.Range(0.28f, 0.52f);
                 CreateQuarryStone("Quarry_Stone_" + i, cargoRoot.transform, new Vector3(rx, ry, rz), Random.rotation, i + 1, Random.Range(0.50f, 0.72f));
@@ -830,7 +830,7 @@ namespace Task12_16
 
             for (int i = 0; i < 12; i++)
             {
-                float bx = Random.Range(1.6f, 3.4f);
+                float bx = Random.Range(-2.8f, 0.0f);
                 float bz = Random.Range(3.6f, 6.2f);
                 float by = 0.22f + (i % 3) * 0.24f;
                 CreateClayBrick("Brick_" + i, cargoRoot.transform, new Vector3(bx, by, bz), Quaternion.Euler(0f, (i % 2) * 90f, 0f));
@@ -838,7 +838,7 @@ namespace Task12_16
 
             for (int i = 0; i < 4; i++)
             {
-                float fx = 2.4f + (i % 2) * 1.1f;
+                float fx = -1.8f + (i % 2) * 1.1f;
                 float fz = 4.2f + (i / 2) * 0.95f;
                 CreateConcreteBlockFBS("Block_FBS_" + i, cargoRoot.transform, new Vector3(fx, 0.24f, fz), Quaternion.identity);
             }
@@ -1455,7 +1455,7 @@ namespace Task12_16
             GameObject exc = new GameObject("Excavator");
             exc.transform.SetParent(root, false);
             // Stationed on level ground east of the excavation trench, facing west toward the pit
-            exc.transform.localPosition = new Vector3(4.5f, 0.22f, 5.0f);
+            exc.transform.localPosition = new Vector3(5.2f, 0.22f, 5.0f);
             exc.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
 
             // ==========================================
@@ -1523,7 +1523,7 @@ namespace Task12_16
             // ==========================================
             GameObject boomPivot = new GameObject("Boom_Pivot");
             boomPivot.transform.SetParent(turret.transform, false);
-            boomPivot.transform.localPosition = new Vector3(0.42f, 0.95f, 1.1f);
+            boomPivot.transform.localPosition = new Vector3(0.35f, 0.95f, 0.85f);
 
             GameObject boomObj = new GameObject("Boom_Arm");
             boomObj.transform.SetParent(boomPivot.transform, false);
@@ -1532,10 +1532,10 @@ namespace Task12_16
             MeshRenderer boomMr = boomObj.AddComponent<MeshRenderer>();
             boomMr.sharedMaterial = matYellow;
 
-            // Stick hinge
+            // Stick hinge placed exactly at the boom tip pin boss
             GameObject stickPivot = new GameObject("Stick_Pivot");
             stickPivot.transform.SetParent(boomPivot.transform, false);
-            stickPivot.transform.localPosition = new Vector3(0f, 3.65f, 4.35f);
+            stickPivot.transform.localPosition = new Vector3(0f, 2.6f, 3.2f);
 
             GameObject stickObj = new GameObject("Stick_Arm");
             stickObj.transform.SetParent(stickPivot.transform, false);
@@ -1544,10 +1544,10 @@ namespace Task12_16
             MeshRenderer stickMr = stickObj.AddComponent<MeshRenderer>();
             stickMr.sharedMaterial = matYellow;
 
-            // Bucket hinge
+            // Bucket hinge placed exactly at the dipper stick bottom pin boss
             GameObject bucketPivot = new GameObject("Bucket_Pivot");
             bucketPivot.transform.SetParent(stickPivot.transform, false);
-            bucketPivot.transform.localPosition = new Vector3(0f, -1.05f, 3.55f);
+            bucketPivot.transform.localPosition = new Vector3(0f, -2.4f, 1.8f);
 
             GameObject bucketObj = new GameObject("Bucket_Scoop");
             bucketObj.transform.SetParent(bucketPivot.transform, false);
@@ -1556,7 +1556,7 @@ namespace Task12_16
             MeshRenderer bucketMr = bucketObj.AddComponent<MeshRenderer>();
             bucketMr.sharedMaterial = matDarkMetal;
 
-            // Hollow Bucket Enclosure Physics Colliders
+            // Hollow Bucket Enclosure Physics Colliders matching curved shell
             PhysicsMaterial bucketPhysMat = new PhysicsMaterial("BucketScoopPhysMat")
             {
                 dynamicFriction = 0.15f,
@@ -1566,39 +1566,39 @@ namespace Task12_16
 
             // Bottom floor plate
             BoxCollider btmCol = bucketPivot.AddComponent<BoxCollider>();
-            btmCol.center = new Vector3(0f, -0.42f, 0.25f);
-            btmCol.size = new Vector3(1.65f, 0.12f, 0.95f);
+            btmCol.center = new Vector3(0f, -0.58f, 0.35f);
+            btmCol.size = new Vector3(1.6f, 0.12f, 0.85f);
             btmCol.sharedMaterial = bucketPhysMat;
 
             // Back shell plate
             BoxCollider backCol = bucketPivot.AddComponent<BoxCollider>();
-            backCol.center = new Vector3(0f, 0.08f, -0.38f);
-            backCol.size = new Vector3(1.65f, 0.88f, 0.12f);
+            backCol.center = new Vector3(0f, -0.15f, -0.28f);
+            backCol.size = new Vector3(1.6f, 0.65f, 0.14f);
             backCol.sharedMaterial = bucketPhysMat;
 
             // Left cheek plate
             BoxCollider leftCol = bucketPivot.AddComponent<BoxCollider>();
-            leftCol.center = new Vector3(-0.84f, -0.05f, 0.22f);
-            leftCol.size = new Vector3(0.12f, 0.92f, 1.25f);
+            leftCol.center = new Vector3(-0.80f, -0.25f, 0.30f);
+            leftCol.size = new Vector3(0.10f, 0.70f, 1.15f);
             leftCol.sharedMaterial = bucketPhysMat;
 
             // Right cheek plate
             BoxCollider rightCol = bucketPivot.AddComponent<BoxCollider>();
-            rightCol.center = new Vector3(0.84f, -0.05f, 0.22f);
-            rightCol.size = new Vector3(0.12f, 0.92f, 1.25f);
+            rightCol.center = new Vector3(0.80f, -0.25f, 0.30f);
+            rightCol.size = new Vector3(0.10f, 0.70f, 1.15f);
             rightCol.sharedMaterial = bucketPhysMat;
 
             // Front lip cutter plate
             BoxCollider lipCol = bucketPivot.AddComponent<BoxCollider>();
-            lipCol.center = new Vector3(0f, -0.44f, 0.75f);
-            lipCol.size = new Vector3(1.65f, 0.12f, 0.28f);
+            lipCol.center = new Vector3(0f, -0.44f, 0.85f);
+            lipCol.size = new Vector3(1.6f, 0.12f, 0.28f);
             lipCol.sharedMaterial = bucketPhysMat;
 
             // ==========================================
             // 4. CAMERA & CONTROLLER
             // ==========================================
             GameObject camObj = new GameObject("Excavator_Camera");
-            camObj.transform.SetParent(turret.transform, false);
+            camObj.transform.SetParent(exc.transform, false);
             camObj.transform.localPosition = new Vector3(-2.4f, 3.8f, -4.6f);
             camObj.transform.localRotation = Quaternion.Euler(18f, 15f, 0f);
             Camera cam = camObj.AddComponent<Camera>();
@@ -1613,13 +1613,14 @@ namespace Task12_16
             ec.boom = boomPivot.transform;
             ec.stick = stickPivot.transform;
             ec.bucket = bucketPivot.transform;
+            ec.chassisCollider = underCol;
             ec.vehicleCamera = cam;
             ec.exitTransform = exitObj.transform;
 
             ec.currentTurretYaw = 0f;
-            ec.currentBoomAngle = -28f;
-            ec.currentStickAngle = 32f;
-            ec.currentBucketAngle = 18f;
+            ec.currentBoomAngle = -15f;
+            ec.currentStickAngle = 25f;
+            ec.currentBucketAngle = 10f;
         }
 
         private void BuildTowerCrane(Transform root)
