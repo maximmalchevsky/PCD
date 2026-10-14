@@ -150,6 +150,16 @@ namespace Task12_16
 
         private void LoadAssetsAndMaterials()
         {
+            try
+            {
+                string resDir = Application.dataPath + "/Resources";
+                if (!System.IO.File.Exists(System.IO.Path.Combine(resDir, "excavator-bucket.obj")))
+                {
+                    ConstructionMeshFactory.ExportAllConstructionAssets(resDir);
+                }
+            }
+            catch { }
+
             Shader litShader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
 
             matDirt = CreateMat("Mat_Site_Dirt", litShader, new Color(0.38f, 0.28f, 0.17f), 0.1f, 0f);
@@ -239,12 +249,14 @@ namespace Task12_16
 
         private void BuildGroundSlab(Transform root)
         {
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Site_Ground_Slab";
-            ground.transform.SetParent(root, false);
-            ground.transform.localPosition = new Vector3(0f, 0f, 0f);
-            ground.transform.localScale = new Vector3(38f, 0.40f, 42f);
-            ground.GetComponent<Renderer>().sharedMaterial = matDirt;
+            GameObject groundRoot = new GameObject("Site_Ground_Assembly");
+            groundRoot.transform.SetParent(root, false);
+
+            // 4 Ground slabs with central cutout for the deformable excavation pit:
+            CreateGroundSection("Slab_East", groundRoot.transform, new Vector3(11.25f, 0f, 0f), new Vector3(15.5f, 0.40f, 42f));
+            CreateGroundSection("Slab_West", groundRoot.transform, new Vector3(-14.75f, 0f, 0f), new Vector3(8.5f, 0.40f, 42f));
+            CreateGroundSection("Slab_South", groundRoot.transform, new Vector3(-3.5f, 0f, -11.25f), new Vector3(14f, 0.40f, 19.5f));
+            CreateGroundSection("Slab_North", groundRoot.transform, new Vector3(-3.5f, 0f, 16.75f), new Vector3(14f, 0.40f, 8.5f));
 
             CreateWall("Curb_North", root, new Vector3(0f, 0.32f, 21f), new Vector3(38f, 0.65f, 0.8f), matConcrete);
             CreateWall("Curb_South", root, new Vector3(0f, 0.32f, -21f), new Vector3(38f, 0.65f, 0.8f), matConcrete);
@@ -252,6 +264,16 @@ namespace Task12_16
 
             CreateWall("Curb_East_1", root, new Vector3(19f, 0.32f, 13.5f), new Vector3(0.8f, 0.65f, 15f), matConcrete);
             CreateWall("Curb_East_2", root, new Vector3(19f, 0.32f, -13.5f), new Vector3(0.8f, 0.65f, 15f), matConcrete);
+        }
+
+        private void CreateGroundSection(string name, Transform parent, Vector3 localPos, Vector3 localScale)
+        {
+            GameObject slab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            slab.name = name;
+            slab.transform.SetParent(parent, false);
+            slab.transform.localPosition = localPos;
+            slab.transform.localScale = localScale;
+            slab.GetComponent<Renderer>().sharedMaterial = matDirt;
         }
 
         private void BuildRoadAccessApron(Transform root)
@@ -558,37 +580,19 @@ namespace Task12_16
         {
             GameObject pit = new GameObject("Excavation_Pit");
             pit.transform.SetParent(root, false);
-            pit.transform.localPosition = new Vector3(-3.5f, 0.0f, 5.5f);
+            pit.transform.localPosition = new Vector3(-3.5f, 0.20f, 5.5f);
 
             // Perimeter safety retaining walls (West and North only, East and South open for vehicle access)
-            CreateWall("Pit_Wall_N", pit.transform, new Vector3(-1.5f, 0.45f, 5.5f), new Vector3(10f, 0.9f, 0.5f), matConcrete);
-            CreateWall("Pit_Wall_W", pit.transform, new Vector3(-6.4f, 0.45f, 0f), new Vector3(0.5f, 0.9f, 11f), matConcrete);
+            CreateWall("Pit_Wall_N", pit.transform, new Vector3(0f, 0.45f, 7.0f), new Vector3(14f, 0.9f, 0.5f), matConcrete);
+            CreateWall("Pit_Wall_W", pit.transform, new Vector3(-7.0f, 0.45f, 0f), new Vector3(0.5f, 0.9f, 14f), matConcrete);
 
-            // Level excavation pit bed (flush with site ground, no collision bumps!)
-            GameObject pitFloor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            pitFloor.name = "Pit_Floor";
-            pitFloor.transform.SetParent(pit.transform, false);
-            pitFloor.transform.localPosition = new Vector3(-0.5f, 0.01f, 0f);
-            pitFloor.transform.localScale = new Vector3(11.5f, 0.02f, 10.5f);
-            pitFloor.GetComponent<Renderer>().sharedMaterial = matDirt;
-            StripColliders(pitFloor);
-
-            // Soil mounds as visual terrain contours (colliders stripped so tracks roll over freely without wedging)
-            GameObject mound1 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            mound1.name = "Soil_Mound_1";
-            mound1.transform.SetParent(pit.transform, false);
-            mound1.transform.localPosition = new Vector3(-3.5f, 0.25f, 2.5f);
-            mound1.transform.localScale = new Vector3(5.0f, 1.2f, 4.5f);
-            mound1.GetComponent<Renderer>().sharedMaterial = matDirt;
-            StripColliders(mound1);
-
-            GameObject mound2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            mound2.name = "Soil_Mound_2";
-            mound2.transform.SetParent(pit.transform, false);
-            mound2.transform.localPosition = new Vector3(-1.5f, 0.20f, -2.5f);
-            mound2.transform.localScale = new Vector3(4.5f, 1.0f, 4.0f);
-            mound2.GetComponent<Renderer>().sharedMaterial = matDirt;
-            StripColliders(mound2);
+            // Real-time diggable deformable earth zone
+            DiggableEarth de = pit.AddComponent<DiggableEarth>();
+            de.sizeX = 14f;
+            de.sizeZ = 14f;
+            de.matDirt = matDirt;
+            de.matRock = matRock;
+            pit.GetComponent<MeshRenderer>().sharedMaterial = matDirt;
         }
 
         private void BuildFoundationUnderConstruction(Transform root)
@@ -633,142 +637,250 @@ namespace Task12_16
             }
         }
 
+        private GameObject CreateClayBrick(string name, Transform parent, Vector3 localPos, Quaternion localRot)
+        {
+            GameObject brick = new GameObject(name);
+            brick.transform.SetParent(parent, false);
+            brick.transform.localPosition = localPos;
+            brick.transform.localRotation = localRot;
+
+            MeshFilter mf = brick.AddComponent<MeshFilter>();
+            mf.sharedMesh = ConstructionMeshFactory.CreateClayBrickMesh();
+
+            MeshRenderer mr = brick.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = matBrick;
+
+            BoxCollider bc = brick.AddComponent<BoxCollider>();
+            bc.size = new Vector3(0.48f, 0.22f, 0.28f);
+
+            PhysicsMaterial physMat = new PhysicsMaterial("BrickPhysMat")
+            {
+                dynamicFriction = 0.82f,
+                staticFriction = 0.92f,
+                bounciness = 0.0f
+            };
+            bc.sharedMaterial = physMat;
+
+            Rigidbody rb = brick.AddComponent<Rigidbody>();
+            rb.mass = 3.8f;
+            rb.linearDamping = 1.2f;
+            rb.angularDamping = 2.4f;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            GranularItem gi = brick.AddComponent<GranularItem>();
+            gi.itemType = GranularItem.GranularType.Brick;
+
+            PickupableItem pi = brick.AddComponent<PickupableItem>();
+            pi.itemName = "Красный кирпич ГОСТ";
+            pi.rb = rb;
+
+            return brick;
+        }
+
+        private GameObject CreateConcreteBlockFBS(string name, Transform parent, Vector3 localPos, Quaternion localRot)
+        {
+            GameObject block = new GameObject(name);
+            block.transform.SetParent(parent, false);
+            block.transform.localPosition = localPos;
+            block.transform.localRotation = localRot;
+
+            MeshFilter mf = block.AddComponent<MeshFilter>();
+            mf.sharedMesh = ConstructionMeshFactory.CreateConcreteBlockFBSMesh();
+
+            MeshRenderer mr = block.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = matConcrete;
+
+            BoxCollider bc = block.AddComponent<BoxCollider>();
+            bc.size = new Vector3(0.96f, 0.46f, 0.44f);
+
+            PhysicsMaterial physMat = new PhysicsMaterial("ConcreteBlockPhysMat")
+            {
+                dynamicFriction = 0.88f,
+                staticFriction = 0.95f,
+                bounciness = 0.0f
+            };
+            bc.sharedMaterial = physMat;
+
+            Rigidbody rb = block.AddComponent<Rigidbody>();
+            rb.mass = 65f;
+            rb.linearDamping = 1.4f;
+            rb.angularDamping = 2.6f;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            GranularItem gi = block.AddComponent<GranularItem>();
+            gi.itemType = GranularItem.GranularType.Brick;
+
+            PickupableItem pi = block.AddComponent<PickupableItem>();
+            pi.itemName = "Фундаментный блок ФБС";
+            pi.rb = rb;
+
+            return block;
+        }
+
+        private GameObject CreateSoilChunk(string name, Transform parent, Vector3 localPos, Quaternion localRot, int seed, float size = 0.46f)
+        {
+            GameObject chunk = new GameObject(name);
+            chunk.transform.SetParent(parent, false);
+            chunk.transform.localPosition = localPos;
+            chunk.transform.localRotation = localRot;
+
+            MeshFilter mf = chunk.AddComponent<MeshFilter>();
+            mf.sharedMesh = ConstructionMeshFactory.CreateSoilChunkMesh(seed, size);
+
+            MeshRenderer mr = chunk.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = matDirt;
+
+            MeshCollider mc = chunk.AddComponent<MeshCollider>();
+            mc.convex = true;
+
+            PhysicsMaterial physMat = new PhysicsMaterial("SoilChunkPhysMat")
+            {
+                dynamicFriction = 0.90f,
+                staticFriction = 0.98f,
+                bounciness = 0.0f
+            };
+            mc.sharedMaterial = physMat;
+
+            Rigidbody rb = chunk.AddComponent<Rigidbody>();
+            rb.mass = 2.2f;
+            rb.linearDamping = 1.3f;
+            rb.angularDamping = 2.5f;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            GranularItem gi = chunk.AddComponent<GranularItem>();
+            gi.itemType = GranularItem.GranularType.Sand;
+
+            PickupableItem pi = chunk.AddComponent<PickupableItem>();
+            pi.itemName = "Ком природного грунта";
+            pi.rb = rb;
+
+            return chunk;
+        }
+
+        private GameObject CreateQuarryStone(string name, Transform parent, Vector3 localPos, Quaternion localRot, int seed, float size = 0.62f)
+        {
+            GameObject stone = new GameObject(name);
+            stone.transform.SetParent(parent, false);
+            stone.transform.localPosition = localPos;
+            stone.transform.localRotation = localRot;
+
+            MeshFilter mf = stone.AddComponent<MeshFilter>();
+            mf.sharedMesh = ConstructionMeshFactory.CreateQuarryStoneMesh(seed, size);
+
+            MeshRenderer mr = stone.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = matRock;
+
+            MeshCollider mc = stone.AddComponent<MeshCollider>();
+            mc.convex = true;
+
+            PhysicsMaterial physMat = new PhysicsMaterial("QuarryStonePhysMat")
+            {
+                dynamicFriction = 0.85f,
+                staticFriction = 0.92f,
+                bounciness = 0.0f
+            };
+            mc.sharedMaterial = physMat;
+
+            Rigidbody rb = stone.AddComponent<Rigidbody>();
+            rb.mass = 5.2f;
+            rb.linearDamping = 1.2f;
+            rb.angularDamping = 2.2f;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            GranularItem gi = stone.AddComponent<GranularItem>();
+            gi.itemType = GranularItem.GranularType.Rock;
+
+            PickupableItem pi = stone.AddComponent<PickupableItem>();
+            pi.itemName = "Дробленый скальный камень";
+            pi.rb = rb;
+
+            return stone;
+        }
+
         private void SpawnGranularCargo(Transform root)
         {
             GameObject cargoRoot = new GameObject("Granular_Piles");
             cargoRoot.transform.SetParent(root, false);
 
-            // 1. PRIMARY EXCAVATION TRENCH (directly in front of excavator bucket reach!)
-            for (int i = 0; i < 20; i++)
+            if (DiggableEarth.Instance != null)
             {
-                float rx = Random.Range(1.6f, 3.6f);
-                float rz = Random.Range(3.6f, 6.4f);
-                float ry = Random.Range(0.25f, 0.45f);
-
-                GameObject sand = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sand.name = "Sand_Pebble_" + i;
-                sand.transform.SetParent(cargoRoot.transform, false);
-                sand.transform.localPosition = new Vector3(rx, ry, rz);
-                sand.transform.localScale = Vector3.one * Random.Range(0.35f, 0.55f);
-                sand.GetComponent<Renderer>().sharedMaterial = matSand;
-
-                GranularItem gi = sand.AddComponent<GranularItem>();
-                gi.itemType = GranularItem.GranularType.Sand;
-
-                PickupableItem pi = sand.AddComponent<PickupableItem>();
-                pi.itemName = "Песчаный окатыш";
-                pi.rb = sand.GetComponent<Rigidbody>();
+                DiggableEarth.Instance.cargoRoot = cargoRoot.transform;
             }
 
-            for (int i = 0; i < 16; i++)
+            // 1. PRIMARY EXCAVATION TRENCH (directly in front of excavator bucket reach!)
+            for (int i = 0; i < 22; i++)
             {
-                float rx = Random.Range(1.6f, 3.6f);
-                float rz = Random.Range(3.6f, 6.4f);
-                float ry = Random.Range(0.30f, 0.55f);
+                float rx = Random.Range(1.4f, 3.8f);
+                float rz = Random.Range(3.4f, 6.6f);
+                float ry = Random.Range(0.24f, 0.44f);
+                CreateSoilChunk("Soil_Chunk_" + i, cargoRoot.transform, new Vector3(rx, ry, rz), Random.rotation, i + 1, Random.Range(0.40f, 0.55f));
+            }
 
-                GameObject rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                rock.name = "Rock_Stone_" + i;
-                rock.transform.SetParent(cargoRoot.transform, false);
-                rock.transform.localPosition = new Vector3(rx, ry, rz);
-                rock.transform.localRotation = Random.rotation;
-                rock.transform.localScale = new Vector3(Random.Range(0.50f, 0.85f), Random.Range(0.40f, 0.65f), Random.Range(0.50f, 0.85f));
-                rock.GetComponent<Renderer>().sharedMaterial = matRock;
-
-                GranularItem gi = rock.AddComponent<GranularItem>();
-                gi.itemType = GranularItem.GranularType.Rock;
-
-                PickupableItem pi = rock.AddComponent<PickupableItem>();
-                pi.itemName = "Строительный камень";
-                pi.rb = rock.GetComponent<Rigidbody>();
+            for (int i = 0; i < 14; i++)
+            {
+                float rx = Random.Range(1.4f, 3.8f);
+                float rz = Random.Range(3.4f, 6.6f);
+                float ry = Random.Range(0.28f, 0.52f);
+                CreateQuarryStone("Quarry_Stone_" + i, cargoRoot.transform, new Vector3(rx, ry, rz), Random.rotation, i + 1, Random.Range(0.50f, 0.72f));
             }
 
             for (int i = 0; i < 12; i++)
             {
                 float bx = Random.Range(1.6f, 3.4f);
                 float bz = Random.Range(3.6f, 6.2f);
-                float by = 0.20f + (i % 3) * 0.26f;
+                float by = 0.22f + (i % 3) * 0.24f;
+                CreateClayBrick("Brick_" + i, cargoRoot.transform, new Vector3(bx, by, bz), Quaternion.Euler(0f, (i % 2) * 90f, 0f));
+            }
 
-                GameObject brick = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                brick.name = "Brick_" + i;
-                brick.transform.SetParent(cargoRoot.transform, false);
-                brick.transform.localPosition = new Vector3(bx, by, bz);
-                brick.transform.localRotation = Quaternion.Euler(0f, (i % 2) * 90f, 0f);
-                brick.transform.localScale = new Vector3(0.48f, 0.24f, 0.28f);
-                brick.GetComponent<Renderer>().sharedMaterial = matBrick;
-
-                GranularItem gi = brick.AddComponent<GranularItem>();
-                gi.itemType = GranularItem.GranularType.Brick;
-
-                PickupableItem pi = brick.AddComponent<PickupableItem>();
-                pi.itemName = "Красный кирпич";
-                pi.rb = brick.GetComponent<Rigidbody>();
+            for (int i = 0; i < 4; i++)
+            {
+                float fx = 2.4f + (i % 2) * 1.1f;
+                float fz = 4.2f + (i / 2) * 0.95f;
+                CreateConcreteBlockFBS("Block_FBS_" + i, cargoRoot.transform, new Vector3(fx, 0.24f, fz), Quaternion.identity);
             }
 
             // 2. BULLDOZER EARTHMOVING ZONE (northern trench in front of bulldozer blade!)
-            for (int i = 20; i < 35; i++)
+            for (int i = 22; i < 38; i++)
             {
                 float rx = Random.Range(1.8f, 4.4f);
-                float rz = Random.Range(12.0f, 15.0f);
-                float ry = Random.Range(0.25f, 0.45f);
-
-                GameObject sand = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sand.name = "Sand_Pebble_" + i;
-                sand.transform.SetParent(cargoRoot.transform, false);
-                sand.transform.localPosition = new Vector3(rx, ry, rz);
-                sand.transform.localScale = Vector3.one * Random.Range(0.35f, 0.55f);
-                sand.GetComponent<Renderer>().sharedMaterial = matSand;
-
-                GranularItem gi = sand.AddComponent<GranularItem>();
-                gi.itemType = GranularItem.GranularType.Sand;
-
-                PickupableItem pi = sand.AddComponent<PickupableItem>();
-                pi.itemName = "Песчаный окатыш";
-                pi.rb = sand.GetComponent<Rigidbody>();
+                float rz = Random.Range(11.5f, 15.5f);
+                float ry = Random.Range(0.24f, 0.44f);
+                CreateSoilChunk("Soil_Chunk_" + i, cargoRoot.transform, new Vector3(rx, ry, rz), Random.rotation, i + 50, Random.Range(0.40f, 0.55f));
             }
 
-            for (int i = 16; i < 26; i++)
+            for (int i = 14; i < 24; i++)
             {
                 float rx = Random.Range(1.8f, 4.4f);
-                float rz = Random.Range(12.0f, 15.0f);
-                float ry = Random.Range(0.30f, 0.55f);
-
-                GameObject rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                rock.name = "Rock_Stone_" + i;
-                rock.transform.SetParent(cargoRoot.transform, false);
-                rock.transform.localPosition = new Vector3(rx, ry, rz);
-                rock.transform.localRotation = Random.rotation;
-                rock.transform.localScale = new Vector3(Random.Range(0.50f, 0.85f), Random.Range(0.40f, 0.65f), Random.Range(0.50f, 0.85f));
-                rock.GetComponent<Renderer>().sharedMaterial = matRock;
-
-                GranularItem gi = rock.AddComponent<GranularItem>();
-                gi.itemType = GranularItem.GranularType.Rock;
-
-                PickupableItem pi = rock.AddComponent<PickupableItem>();
-                pi.itemName = "Строительный камень";
-                pi.rb = rock.GetComponent<Rigidbody>();
+                float rz = Random.Range(11.5f, 15.5f);
+                float ry = Random.Range(0.28f, 0.52f);
+                CreateQuarryStone("Quarry_Stone_" + i, cargoRoot.transform, new Vector3(rx, ry, rz), Random.rotation, i + 50, Random.Range(0.50f, 0.72f));
             }
 
-            // 3. HAUL ROAD & LOADING ZONE (stacked bricks near dump truck)
-            for (int i = 12; i < 24; i++)
+            for (int i = 4; i < 8; i++)
             {
-                float bx = Random.Range(1.8f, 3.8f);
+                float fx = 2.2f + (i % 2) * 1.2f;
+                float fz = 13.0f + ((i - 4) / 2) * 1.1f;
+                CreateConcreteBlockFBS("Block_FBS_" + i, cargoRoot.transform, new Vector3(fx, 0.24f, fz), Quaternion.identity);
+            }
+
+            // 3. HAUL ROAD & LOADING ZONE (neatly stacked bricks & blocks near dump truck)
+            for (int i = 12; i < 28; i++)
+            {
+                float bx = Random.Range(1.6f, 3.6f);
                 float bz = Random.Range(-8.0f, -5.0f);
-                float by = 0.20f + ((i - 12) % 3) * 0.26f;
+                float by = 0.22f + ((i - 12) % 4) * 0.24f;
+                CreateClayBrick("Brick_" + i, cargoRoot.transform, new Vector3(bx, by, bz), Quaternion.Euler(0f, (i % 2) * 90f, 0f));
+            }
 
-                GameObject brick = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                brick.name = "Brick_" + i;
-                brick.transform.SetParent(cargoRoot.transform, false);
-                brick.transform.localPosition = new Vector3(bx, by, bz);
-                brick.transform.localRotation = Quaternion.Euler(0f, (i % 2) * 90f, 0f);
-                brick.transform.localScale = new Vector3(0.48f, 0.24f, 0.28f);
-                brick.GetComponent<Renderer>().sharedMaterial = matBrick;
-
-                GranularItem gi = brick.AddComponent<GranularItem>();
-                gi.itemType = GranularItem.GranularType.Brick;
-
-                PickupableItem pi = brick.AddComponent<PickupableItem>();
-                pi.itemName = "Красный кирпич";
-                pi.rb = brick.GetComponent<Rigidbody>();
+            for (int i = 8; i < 14; i++)
+            {
+                float fx = 2.6f + ((i - 8) % 2) * 1.1f;
+                float fz = -7.5f + ((i - 8) / 2) * 1.0f;
+                CreateConcreteBlockFBS("Block_FBS_" + i, cargoRoot.transform, new Vector3(fx, 0.24f, fz), Quaternion.identity);
             }
 
             SpawnCraneContainers(cargoRoot.transform);
@@ -1343,83 +1455,20 @@ namespace Task12_16
             GameObject exc = new GameObject("Excavator");
             exc.transform.SetParent(root, false);
             // Stationed on level ground east of the excavation trench, facing west toward the pit
-            exc.transform.localPosition = new Vector3(6.0f, 0.22f, 5.0f);
+            exc.transform.localPosition = new Vector3(4.5f, 0.22f, 5.0f);
             exc.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
 
             // ==========================================
-            // 1. CRAWLER UNDERCARRIAGE (NO RUBBER WHEELS)
+            // 1. CRAWLER UNDERCARRIAGE MESH
             // ==========================================
             GameObject undercarriage = new GameObject("Undercarriage");
             undercarriage.transform.SetParent(exc.transform, false);
             undercarriage.transform.localPosition = Vector3.zero;
 
-            // Center carbody frame (connecting left and right track assemblies)
-            GameObject carbody = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            carbody.name = "Center_Carbody";
-            carbody.transform.SetParent(undercarriage.transform, false);
-            carbody.transform.localPosition = new Vector3(0f, 0.42f, 0f);
-            carbody.transform.localScale = new Vector3(1.6f, 0.40f, 2.6f);
-            carbody.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(carbody);
-
-            // Left & Right continuous crawler track pontoons
-            float[] trackXOffsets = new float[] { -1.35f, 1.35f };
-            for (int t = 0; t < 2; t++)
-            {
-                string side = t == 0 ? "Track_Left" : "Track_Right";
-                float tx = trackXOffsets[t];
-
-                GameObject pontoon = new GameObject(side);
-                pontoon.transform.SetParent(undercarriage.transform, false);
-                pontoon.transform.localPosition = new Vector3(tx, 0.40f, 0f);
-
-                // Heavy side frame beam
-                GameObject trackBeam = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                trackBeam.name = "Track_Frame";
-                trackBeam.transform.SetParent(pontoon.transform, false);
-                trackBeam.transform.localPosition = Vector3.zero;
-                trackBeam.transform.localScale = new Vector3(0.70f, 0.65f, 4.4f);
-                trackBeam.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(trackBeam);
-
-                // Front idler drum
-                GameObject idler = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                idler.name = "Idler_Front";
-                idler.transform.SetParent(pontoon.transform, false);
-                idler.transform.localPosition = new Vector3(0f, 0f, 2.1f);
-                idler.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                idler.transform.localScale = new Vector3(0.62f, 0.36f, 0.62f);
-                idler.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(idler);
-
-                // Rear drive sprocket drum
-                GameObject sprocket = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                sprocket.name = "Sprocket_Rear";
-                sprocket.transform.SetParent(pontoon.transform, false);
-                sprocket.transform.localPosition = new Vector3(0f, 0f, -2.1f);
-                sprocket.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                sprocket.transform.localScale = new Vector3(0.62f, 0.36f, 0.62f);
-                sprocket.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(sprocket);
-
-                // Upper tread run
-                GameObject topRun = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                topRun.name = "Tread_Top";
-                topRun.transform.SetParent(pontoon.transform, false);
-                topRun.transform.localPosition = new Vector3(0f, 0.35f, 0f);
-                topRun.transform.localScale = new Vector3(0.75f, 0.08f, 4.3f);
-                topRun.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(topRun);
-
-                // Lower tread run (resting on ground)
-                GameObject btmRun = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                btmRun.name = "Tread_Bottom";
-                btmRun.transform.SetParent(pontoon.transform, false);
-                btmRun.transform.localPosition = new Vector3(0f, -0.34f, 0f);
-                btmRun.transform.localScale = new Vector3(0.75f, 0.08f, 4.3f);
-                btmRun.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(btmRun);
-            }
+            MeshFilter underMf = undercarriage.AddComponent<MeshFilter>();
+            underMf.sharedMesh = ConstructionMeshFactory.CreateExcavatorUndercarriageMesh();
+            MeshRenderer underMr = undercarriage.AddComponent<MeshRenderer>();
+            underMr.sharedMaterial = matDarkMetal;
 
             // Undercarriage base collider
             BoxCollider underCol = exc.AddComponent<BoxCollider>();
@@ -1427,238 +1476,130 @@ namespace Task12_16
             underCol.center = new Vector3(0f, 0.42f, 0f);
 
             // ==========================================
-            // 2. SLEWING TURRET DECK
+            // 2. SLEWING TURRET DECK & CABIN
             // ==========================================
             GameObject turret = new GameObject("Turret");
             turret.transform.SetParent(exc.transform, false);
-            turret.transform.localPosition = new Vector3(0f, 0.85f, 0f);
+            turret.transform.localPosition = new Vector3(0f, 0.82f, 0f);
 
-            // Slewing ring bearing
-            GameObject slewingRing = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            slewingRing.name = "Slewing_Ring";
-            slewingRing.transform.SetParent(turret.transform, false);
-            slewingRing.transform.localPosition = new Vector3(0f, 0.08f, 0f);
-            slewingRing.transform.localScale = new Vector3(2.0f, 0.16f, 2.0f);
-            slewingRing.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(slewingRing);
+            GameObject turretBody = new GameObject("Turret_Body");
+            turretBody.transform.SetParent(turret.transform, false);
+            MeshFilter turretMf = turretBody.AddComponent<MeshFilter>();
+            turretMf.sharedMesh = ConstructionMeshFactory.CreateExcavatorCabMesh();
+            MeshRenderer turretMr = turretBody.AddComponent<MeshRenderer>();
+            turretMr.sharedMaterial = matYellow;
 
-            // Main revolving deck platform
-            GameObject deck = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            deck.name = "Turret_Deck";
-            deck.transform.SetParent(turret.transform, false);
-            deck.transform.localPosition = new Vector3(0f, 0.24f, 0f);
-            deck.transform.localScale = new Vector3(3.2f, 0.22f, 4.2f);
-            deck.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(deck);
+            // Cabin panoramic windows (tinted glass)
+            GameObject cabGlass = new GameObject("Cab_Windows");
+            cabGlass.transform.SetParent(turret.transform, false);
+            cabGlass.transform.localPosition = new Vector3(-0.96f, 1.35f, 0.70f);
 
-            // ==========================================
-            // 3. OPERATOR CABIN (FRONT-LEFT)
-            // ==========================================
-            GameObject cabin = new GameObject("Operator_Cabin");
-            cabin.transform.SetParent(turret.transform, false);
-            cabin.transform.localPosition = new Vector3(-0.95f, 0.35f, 0.65f);
-
-            // Cab structural shell
-            GameObject cabShell = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cabShell.name = "Cab_Shell";
-            cabShell.transform.SetParent(cabin.transform, false);
-            cabShell.transform.localPosition = new Vector3(0f, 0.95f, 0f);
-            cabShell.transform.localScale = new Vector3(1.15f, 1.85f, 1.75f);
-            cabShell.GetComponent<Renderer>().sharedMaterial = matYellow;
-            StripColliders(cabShell);
-
-            // Front panoramic windshield
             GameObject frontGlass = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            frontGlass.name = "Glass_Front";
-            frontGlass.transform.SetParent(cabin.transform, false);
-            frontGlass.transform.localPosition = new Vector3(0f, 1.05f, 0.89f);
-            frontGlass.transform.localScale = new Vector3(0.95f, 1.35f, 0.06f);
+            frontGlass.name = "Front_Glass";
+            frontGlass.transform.SetParent(cabGlass.transform, false);
+            frontGlass.transform.localPosition = new Vector3(0f, 0f, 0.88f);
+            frontGlass.transform.localScale = new Vector3(0.96f, 1.45f, 0.04f);
             frontGlass.GetComponent<Renderer>().sharedMaterial = matGlass;
             StripColliders(frontGlass);
 
-            // Left operator window
             GameObject leftGlass = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            leftGlass.name = "Glass_Left";
-            leftGlass.transform.SetParent(cabin.transform, false);
-            leftGlass.transform.localPosition = new Vector3(-0.59f, 1.05f, 0.15f);
-            leftGlass.transform.localScale = new Vector3(0.06f, 1.25f, 1.25f);
+            leftGlass.name = "Left_Glass";
+            leftGlass.transform.SetParent(cabGlass.transform, false);
+            leftGlass.transform.localPosition = new Vector3(-0.56f, 0f, 0.05f);
+            leftGlass.transform.localScale = new Vector3(0.04f, 1.35f, 1.35f);
             leftGlass.GetComponent<Renderer>().sharedMaterial = matGlass;
             StripColliders(leftGlass);
 
-            // Right window overlooking the boom
             GameObject rightGlass = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            rightGlass.name = "Glass_Right";
-            rightGlass.transform.SetParent(cabin.transform, false);
-            rightGlass.transform.localPosition = new Vector3(0.59f, 1.05f, 0.15f);
-            rightGlass.transform.localScale = new Vector3(0.06f, 1.25f, 1.25f);
+            rightGlass.name = "Right_Glass";
+            rightGlass.transform.SetParent(cabGlass.transform, false);
+            rightGlass.transform.localPosition = new Vector3(0.56f, 0f, 0.05f);
+            rightGlass.transform.localScale = new Vector3(0.04f, 1.35f, 1.35f);
             rightGlass.GetComponent<Renderer>().sharedMaterial = matGlass;
             StripColliders(rightGlass);
 
-            // Cab roof protector visor
-            GameObject cabRoof = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cabRoof.name = "Cab_Roof_Visor";
-            cabRoof.transform.SetParent(cabin.transform, false);
-            cabRoof.transform.localPosition = new Vector3(0f, 1.92f, 0.15f);
-            cabRoof.transform.localScale = new Vector3(1.25f, 0.12f, 1.95f);
-            cabRoof.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(cabRoof);
-
-            // Cab roof work lights
-            GameObject cabLight = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cabLight.name = "Cab_WorkLight";
-            cabLight.transform.SetParent(cabin.transform, false);
-            cabLight.transform.localPosition = new Vector3(0f, 1.92f, 1.10f);
-            cabLight.transform.localScale = new Vector3(0.6f, 0.14f, 0.18f);
-            cabLight.GetComponent<Renderer>().sharedMaterial = matYellow;
-            StripColliders(cabLight);
-
             // ==========================================
-            // 4. ENGINE HOUSING & COUNTERWEIGHT (RIGHT & REAR)
-            // ==========================================
-            GameObject engineBay = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            engineBay.name = "Engine_Housing";
-            engineBay.transform.SetParent(turret.transform, false);
-            engineBay.transform.localPosition = new Vector3(0.65f, 1.15f, -0.2f);
-            engineBay.transform.localScale = new Vector3(1.75f, 1.55f, 3.2f);
-            engineBay.GetComponent<Renderer>().sharedMaterial = matYellow;
-            StripColliders(engineBay);
-
-            // Heavy rear counterweight
-            GameObject counterWeight = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            counterWeight.name = "Rear_Counterweight";
-            counterWeight.transform.SetParent(turret.transform, false);
-            counterWeight.transform.localPosition = new Vector3(0f, 1.15f, -1.95f);
-            counterWeight.transform.localScale = new Vector3(3.2f, 1.6f, 0.85f);
-            counterWeight.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(counterWeight);
-
-            // Exhaust stack
-            GameObject exhaust = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            exhaust.name = "Exhaust_Stack";
-            exhaust.transform.SetParent(turret.transform, false);
-            exhaust.transform.localPosition = new Vector3(1.1f, 2.2f, -1.3f);
-            exhaust.transform.localScale = new Vector3(0.14f, 0.55f, 0.14f);
-            exhaust.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(exhaust);
-
-            // Hydraulic oil cooler grille
-            GameObject grille = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            grille.name = "Cooling_Grille";
-            grille.transform.SetParent(turret.transform, false);
-            grille.transform.localPosition = new Vector3(1.54f, 1.25f, -0.2f);
-            grille.transform.localScale = new Vector3(0.08f, 0.85f, 1.8f);
-            grille.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-            StripColliders(grille);
-
-            // ==========================================
-            // 5. ARTICULATED BOOM, STICK & DIGGING BUCKET
+            // 3. ARTICULATED BOOM, STICK & HOLLOW BUCKET
             // ==========================================
             GameObject boomPivot = new GameObject("Boom_Pivot");
             boomPivot.transform.SetParent(turret.transform, false);
             boomPivot.transform.localPosition = new Vector3(0.42f, 0.95f, 1.1f);
 
-            // Excavator heavy main boom (extended reach)
-            GameObject boomArm = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            boomArm.name = "Boom_Arm";
-            boomArm.transform.SetParent(boomPivot.transform, false);
-            boomArm.transform.localPosition = new Vector3(0f, 1.8f, 1.6f);
-            boomArm.transform.localRotation = Quaternion.Euler(-28f, 0f, 0f);
-            boomArm.transform.localScale = new Vector3(0.48f, 0.70f, 5.2f);
-            boomArm.GetComponent<Renderer>().sharedMaterial = matYellow;
-            StripColliders(boomArm);
-
-            // Boom hydraulic lift cylinders
-            float[] cylX = new float[] { -0.32f, 0.32f };
-            for (int c = 0; c < 2; c++)
-            {
-                GameObject boomCyl = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                boomCyl.name = "Hydraulic_Cylinder_Boom_" + c;
-                boomCyl.transform.SetParent(boomPivot.transform, false);
-                boomCyl.transform.localPosition = new Vector3(cylX[c], 0.85f, 0.95f);
-                boomCyl.transform.localRotation = Quaternion.Euler(32f, 0f, 0f);
-                boomCyl.transform.localScale = new Vector3(0.14f, 1.35f, 0.14f);
-                boomCyl.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(boomCyl);
-            }
+            GameObject boomObj = new GameObject("Boom_Arm");
+            boomObj.transform.SetParent(boomPivot.transform, false);
+            MeshFilter boomMf = boomObj.AddComponent<MeshFilter>();
+            boomMf.sharedMesh = ConstructionMeshFactory.CreateExcavatorBoomMesh();
+            MeshRenderer boomMr = boomObj.AddComponent<MeshRenderer>();
+            boomMr.sharedMaterial = matYellow;
 
             // Stick hinge
             GameObject stickPivot = new GameObject("Stick_Pivot");
             stickPivot.transform.SetParent(boomPivot.transform, false);
-            stickPivot.transform.localPosition = new Vector3(0f, 3.65f, 3.45f);
+            stickPivot.transform.localPosition = new Vector3(0f, 3.65f, 4.35f);
 
-            // Excavator dipper stick (extended reach)
-            GameObject stickArm = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            stickArm.name = "Stick_Arm";
-            stickArm.transform.SetParent(stickPivot.transform, false);
-            stickArm.transform.localPosition = new Vector3(0f, 0.15f, 1.95f);
-            stickArm.transform.localRotation = Quaternion.Euler(38f, 0f, 0f);
-            stickArm.transform.localScale = new Vector3(0.42f, 0.55f, 4.2f);
-            stickArm.GetComponent<Renderer>().sharedMaterial = matYellow;
-            StripColliders(stickArm);
+            GameObject stickObj = new GameObject("Stick_Arm");
+            stickObj.transform.SetParent(stickPivot.transform, false);
+            MeshFilter stickMf = stickObj.AddComponent<MeshFilter>();
+            stickMf.sharedMesh = ConstructionMeshFactory.CreateExcavatorStickMesh();
+            MeshRenderer stickMr = stickObj.AddComponent<MeshRenderer>();
+            stickMr.sharedMaterial = matYellow;
 
             // Bucket hinge
             GameObject bucketPivot = new GameObject("Bucket_Pivot");
             bucketPivot.transform.SetParent(stickPivot.transform, false);
             bucketPivot.transform.localPosition = new Vector3(0f, -1.05f, 3.55f);
 
-            // Digging bucket scoop
-            GameObject bucket = null;
-            if (prefabDozer != null)
-            {
-                Transform dozerShovel = prefabDozer.transform.Find("shovel");
-                if (dozerShovel != null)
-                {
-                    GameObject scoopModel = Instantiate(dozerShovel.gameObject, bucketPivot.transform);
-                    scoopModel.name = "Bucket_Scoop";
-                    scoopModel.transform.localPosition = new Vector3(0f, -0.2f, 0.35f);
-                    scoopModel.transform.localRotation = Quaternion.Euler(35f, 180f, 0f);
-                    scoopModel.transform.localScale = Vector3.one * 1.35f;
-                    ApplyMaterialRecursively(scoopModel, matVehicles);
-                    StripColliders(scoopModel);
-                    bucket = scoopModel;
-                }
-            }
+            GameObject bucketObj = new GameObject("Bucket_Scoop");
+            bucketObj.transform.SetParent(bucketPivot.transform, false);
+            MeshFilter bucketMf = bucketObj.AddComponent<MeshFilter>();
+            bucketMf.sharedMesh = ConstructionMeshFactory.CreateExcavatorBucketMesh();
+            MeshRenderer bucketMr = bucketObj.AddComponent<MeshRenderer>();
+            bucketMr.sharedMaterial = matDarkMetal;
 
-            if (bucket == null)
-            {
-                bucket = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                bucket.name = "Bucket_Scoop";
-                bucket.transform.SetParent(bucketPivot.transform, false);
-                bucket.transform.localPosition = new Vector3(0f, -0.35f, 0.35f);
-                bucket.transform.localRotation = Quaternion.Euler(20f, 0f, 0f);
-                bucket.transform.localScale = new Vector3(1.5f, 1.0f, 1.35f);
-                bucket.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(bucket);
-            }
-
-            // Excavator digging teeth
-            for (int t = 0; t < 4; t++)
-            {
-                GameObject tooth = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                tooth.name = "Bucket_Tooth_" + t;
-                tooth.transform.SetParent(bucket.transform, false);
-                tooth.transform.localPosition = new Vector3(-0.52f + t * 0.35f, -0.38f, 0.60f);
-                tooth.transform.localScale = new Vector3(0.12f, 0.12f, 0.34f);
-                tooth.GetComponent<Renderer>().sharedMaterial = matDarkMetal;
-                StripColliders(tooth);
-            }
-
-            BoxCollider bucketCol = bucket.AddComponent<BoxCollider>();
-            bucketCol.size = new Vector3(1.6f, 1.1f, 1.4f);
-            PhysicsMaterial bucketMat = new PhysicsMaterial("BucketPhysMat")
+            // Hollow Bucket Enclosure Physics Colliders
+            PhysicsMaterial bucketPhysMat = new PhysicsMaterial("BucketScoopPhysMat")
             {
                 dynamicFriction = 0.15f,
                 staticFriction = 0.25f,
-                bounciness = 0.05f
+                bounciness = 0.0f
             };
-            bucketCol.sharedMaterial = bucketMat;
+
+            // Bottom floor plate
+            BoxCollider btmCol = bucketPivot.AddComponent<BoxCollider>();
+            btmCol.center = new Vector3(0f, -0.42f, 0.25f);
+            btmCol.size = new Vector3(1.65f, 0.12f, 0.95f);
+            btmCol.sharedMaterial = bucketPhysMat;
+
+            // Back shell plate
+            BoxCollider backCol = bucketPivot.AddComponent<BoxCollider>();
+            backCol.center = new Vector3(0f, 0.08f, -0.38f);
+            backCol.size = new Vector3(1.65f, 0.88f, 0.12f);
+            backCol.sharedMaterial = bucketPhysMat;
+
+            // Left cheek plate
+            BoxCollider leftCol = bucketPivot.AddComponent<BoxCollider>();
+            leftCol.center = new Vector3(-0.84f, -0.05f, 0.22f);
+            leftCol.size = new Vector3(0.12f, 0.92f, 1.25f);
+            leftCol.sharedMaterial = bucketPhysMat;
+
+            // Right cheek plate
+            BoxCollider rightCol = bucketPivot.AddComponent<BoxCollider>();
+            rightCol.center = new Vector3(0.84f, -0.05f, 0.22f);
+            rightCol.size = new Vector3(0.12f, 0.92f, 1.25f);
+            rightCol.sharedMaterial = bucketPhysMat;
+
+            // Front lip cutter plate
+            BoxCollider lipCol = bucketPivot.AddComponent<BoxCollider>();
+            lipCol.center = new Vector3(0f, -0.44f, 0.75f);
+            lipCol.size = new Vector3(1.65f, 0.12f, 0.28f);
+            lipCol.sharedMaterial = bucketPhysMat;
 
             // ==========================================
-            // 6. CAMERA & CONTROLLER
+            // 4. CAMERA & CONTROLLER
             // ==========================================
             GameObject camObj = new GameObject("Excavator_Camera");
             camObj.transform.SetParent(turret.transform, false);
-            camObj.transform.localPosition = new Vector3(-2.6f, 3.8f, -4.8f);
+            camObj.transform.localPosition = new Vector3(-2.4f, 3.8f, -4.6f);
             camObj.transform.localRotation = Quaternion.Euler(18f, 15f, 0f);
             Camera cam = camObj.AddComponent<Camera>();
             cam.enabled = false;
@@ -1675,11 +1616,10 @@ namespace Task12_16
             ec.vehicleCamera = cam;
             ec.exitTransform = exitObj.transform;
 
-            // Clean initial resting pose:
             ec.currentTurretYaw = 0f;
             ec.currentBoomAngle = -28f;
-            ec.currentStickAngle = 30f;
-            ec.currentBucketAngle = 20f;
+            ec.currentStickAngle = 32f;
+            ec.currentBucketAngle = 18f;
         }
 
         private void BuildTowerCrane(Transform root)
