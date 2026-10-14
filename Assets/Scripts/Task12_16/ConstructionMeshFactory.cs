@@ -634,8 +634,27 @@ namespace Task12_16
             float ly = 0.22f;
             float lz = 0.28f;
 
-            // Solid double-sided main body
-            AddBox(verts, norms, uvs, tris, Vector3.zero, new Vector3(lx, ly, lz), Quaternion.identity);
+            float wallZ = 0.065f;
+            float wallX = 0.065f;
+            float ribX = 0.045f;
+            float innerZ = lz - 2f * wallZ;
+
+            // 1. Front and Back outer long walls
+            float zPosFront = (lz - wallZ) * 0.5f;
+            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0f, zPosFront), new Vector3(lx, ly, wallZ), Quaternion.identity);
+            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0f, -zPosFront), new Vector3(lx, ly, wallZ), Quaternion.identity);
+
+            // 2. Left and Right outer end walls
+            float xPosEnd = (lx - wallX) * 0.5f;
+            AddBox(verts, norms, uvs, tris, new Vector3(-xPosEnd, 0f, 0f), new Vector3(wallX, ly, innerZ), Quaternion.identity);
+            AddBox(verts, norms, uvs, tris, new Vector3( xPosEnd, 0f, 0f), new Vector3(wallX, ly, innerZ), Quaternion.identity);
+
+            // 3. Two internal structural web partitions separating the 3 voids
+            float holeSpacing = (lx - 2f * wallX - 2f * ribX) / 3f;
+            float rib1X = -lx * 0.5f + wallX + holeSpacing + ribX * 0.5f;
+            float rib2X = rib1X + holeSpacing + ribX;
+            AddBox(verts, norms, uvs, tris, new Vector3(rib1X, 0f, 0f), new Vector3(ribX, ly, innerZ), Quaternion.identity);
+            AddBox(verts, norms, uvs, tris, new Vector3(rib2X, 0f, 0f), new Vector3(ribX, ly, innerZ), Quaternion.identity);
 
             Mesh mesh = new Mesh();
             mesh.name = "Mesh_Clay_Brick";
@@ -648,7 +667,7 @@ namespace Task12_16
         }
 
         // =========================================================================
-        // 7. REALISTIC CONCRETE FOUNDATION BLOCK MESH (ФБС 9.4.6)
+        // 7. REALISTIC CONCRETE FOUNDATION BLOCK MESH (ФБС 9.4.6 / ШЛАКОБЛОК)
         // =========================================================================
         public static Mesh CreateConcreteBlockFBSMesh()
         {
@@ -657,23 +676,38 @@ namespace Task12_16
             List<Vector2> uvs = new List<Vector2>();
             List<int> tris = new List<int>();
 
-            float lx = 0.96f;
-            float ly = 0.46f;
-            float lz = 0.44f;
+            float lx = 0.78f;
+            float ly = 0.38f;
+            float lz = 0.38f;
 
-            // Solid double-sided main block body
-            AddBox(verts, norms, uvs, tris, Vector3.zero, new Vector3(lx, ly, lz), Quaternion.identity);
+            float wallZ = 0.075f;
+            float wallX = 0.08f;
+            float centerRibX = 0.09f;
+            float innerZ = lz - 2f * wallZ;
 
-            // Steel rebar lifting loops (монтажные петли) on top face
-            float[] loopX = new float[] { -0.28f, 0.28f };
+            // 1. Front and Back outer walls
+            float zPos = (lz - wallZ) * 0.5f;
+            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0f, zPos), new Vector3(lx, ly, wallZ), Quaternion.identity);
+            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0f, -zPos), new Vector3(lx, ly, wallZ), Quaternion.identity);
+
+            // 2. Left and Right outer end walls
+            float xPosEnd = (lx - wallX) * 0.5f;
+            AddBox(verts, norms, uvs, tris, new Vector3(-xPosEnd, 0f, 0f), new Vector3(wallX, ly, innerZ), Quaternion.identity);
+            AddBox(verts, norms, uvs, tris, new Vector3( xPosEnd, 0f, 0f), new Vector3(wallX, ly, innerZ), Quaternion.identity);
+
+            // 3. Center partition wall (webbing) forming 2 large hollow core chambers
+            AddBox(verts, norms, uvs, tris, new Vector3(0f, 0f, 0f), new Vector3(centerRibX, ly, innerZ), Quaternion.identity);
+
+            // 4. Steel rebar lifting loops (монтажные петли) on top face
+            float[] loopX = new float[] { -0.22f, 0.22f };
             for (int l = 0; l < 2; l++)
             {
-                Vector3 loopPos = new Vector3(loopX[l], ly * 0.5f + 0.05f, 0f);
+                Vector3 loopPos = new Vector3(loopX[l], ly * 0.5f + 0.04f, 0f);
                 // Loop posts
-                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(-0.035f, -0.02f, 0f), 0.014f, 0.10f, 8, Quaternion.identity);
-                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3( 0.035f, -0.02f, 0f), 0.014f, 0.10f, 8, Quaternion.identity);
+                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(-0.035f, -0.02f, 0f), 0.012f, 0.08f, 8, Quaternion.identity);
+                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3( 0.035f, -0.02f, 0f), 0.012f, 0.08f, 8, Quaternion.identity);
                 // Loop arch
-                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(0f, 0.035f, 0f), 0.014f, 0.07f, 8, Quaternion.Euler(0f, 0f, 90f));
+                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(0f, 0.025f, 0f), 0.012f, 0.07f, 8, Quaternion.Euler(0f, 0f, 90f));
             }
 
             Mesh mesh = new Mesh();

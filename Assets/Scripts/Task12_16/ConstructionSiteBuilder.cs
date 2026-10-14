@@ -30,6 +30,7 @@ namespace Task12_16
 
         private Material matDirt;
         private Material matConcrete;
+        private Material matConcreteBlock;
         private Material matYellow;
         private Material matOrange;
         private Material matDarkMetal;
@@ -201,13 +202,86 @@ namespace Task12_16
                 matDirt.EnableKeyword("_NORMALMAP");
             }
 
+            Texture2D brickColorTex = Resources.Load<Texture2D>("brick_color");
+            if (brickColorTex == null)
+            {
+                string p = System.IO.Path.Combine(Application.dataPath, "Resources", "brick_color.jpg");
+                if (System.IO.File.Exists(p))
+                {
+                    brickColorTex = new Texture2D(2, 2);
+                    brickColorTex.LoadImage(System.IO.File.ReadAllBytes(p));
+                    brickColorTex.wrapMode = TextureWrapMode.Repeat;
+                }
+            }
+
+            Texture2D brickNormTex = Resources.Load<Texture2D>("brick_normal");
+            if (brickNormTex == null)
+            {
+                string p = System.IO.Path.Combine(Application.dataPath, "Resources", "brick_normal.jpg");
+                if (System.IO.File.Exists(p))
+                {
+                    brickNormTex = new Texture2D(2, 2);
+                    brickNormTex.LoadImage(System.IO.File.ReadAllBytes(p));
+                    brickNormTex.wrapMode = TextureWrapMode.Repeat;
+                }
+            }
+
+            matBrick = CreateMat("Mat_Site_Brick", litShader, new Color(0.92f, 0.40f, 0.28f), 0.12f, 0f);
+            if (brickColorTex != null)
+            {
+                matBrick.mainTexture = brickColorTex;
+                if (matBrick.HasProperty("_BaseMap")) matBrick.SetTexture("_BaseMap", brickColorTex);
+                matBrick.mainTextureScale = new Vector2(1.5f, 1.5f);
+            }
+            if (brickNormTex != null && matBrick.HasProperty("_BumpMap"))
+            {
+                matBrick.SetTexture("_BumpMap", brickNormTex);
+                matBrick.EnableKeyword("_NORMALMAP");
+            }
+
+            Texture2D concreteColorTex = Resources.Load<Texture2D>("concrete_block_color");
+            if (concreteColorTex == null)
+            {
+                string p = System.IO.Path.Combine(Application.dataPath, "Resources", "concrete_block_color.jpg");
+                if (System.IO.File.Exists(p))
+                {
+                    concreteColorTex = new Texture2D(2, 2);
+                    concreteColorTex.LoadImage(System.IO.File.ReadAllBytes(p));
+                    concreteColorTex.wrapMode = TextureWrapMode.Repeat;
+                }
+            }
+
+            Texture2D concreteNormTex = Resources.Load<Texture2D>("concrete_block_normal");
+            if (concreteNormTex == null)
+            {
+                string p = System.IO.Path.Combine(Application.dataPath, "Resources", "concrete_block_normal.jpg");
+                if (System.IO.File.Exists(p))
+                {
+                    concreteNormTex = new Texture2D(2, 2);
+                    concreteNormTex.LoadImage(System.IO.File.ReadAllBytes(p));
+                    concreteNormTex.wrapMode = TextureWrapMode.Repeat;
+                }
+            }
+
             matConcrete = CreateMat("Mat_Site_Concrete", litShader, new Color(0.70f, 0.70f, 0.72f), 0.15f, 0.02f);
+            matConcreteBlock = CreateMat("Mat_Site_ConcreteBlock", litShader, new Color(0.78f, 0.78f, 0.80f), 0.15f, 0.02f);
+            if (concreteColorTex != null)
+            {
+                matConcreteBlock.mainTexture = concreteColorTex;
+                if (matConcreteBlock.HasProperty("_BaseMap")) matConcreteBlock.SetTexture("_BaseMap", concreteColorTex);
+                matConcreteBlock.mainTextureScale = new Vector2(1.2f, 1.2f);
+            }
+            if (concreteNormTex != null && matConcreteBlock.HasProperty("_BumpMap"))
+            {
+                matConcreteBlock.SetTexture("_BumpMap", concreteNormTex);
+                matConcreteBlock.EnableKeyword("_NORMALMAP");
+            }
+
             matYellow = CreateMat("Mat_Site_Yellow", litShader, new Color(0.96f, 0.65f, 0.04f), 0.18f, 0.05f);
             matOrange = CreateMat("Mat_Site_Orange", litShader, new Color(0.95f, 0.45f, 0.05f), 0.20f, 0.05f);
             matDarkMetal = CreateMat("Mat_Site_DarkMetal", litShader, new Color(0.18f, 0.19f, 0.21f), 0.25f, 0.65f);
             matSand = CreateMat("Mat_Site_Sand", litShader, new Color(0.82f, 0.71f, 0.46f), 0.08f, 0f);
             matRock = CreateMat("Mat_Site_Rock", litShader, new Color(0.48f, 0.49f, 0.51f), 0.12f, 0f);
-            matBrick = CreateMat("Mat_Site_Brick", litShader, new Color(0.74f, 0.28f, 0.18f), 0.12f, 0f);
             matWood = CreateMat("Mat_Site_Wood", litShader, new Color(0.58f, 0.42f, 0.26f), 0.15f, 0f);
 
             matGlass = CreateMat("Mat_Site_Glass", litShader, new Color(0.45f, 0.70f, 0.85f, 0.35f), 0.95f, 0.05f);
@@ -696,7 +770,7 @@ namespace Task12_16
             MeshFilter mf = brick.AddComponent<MeshFilter>();
             if (sharedClayBrickMesh == null)
             {
-                sharedClayBrickMesh = ConstructionMeshFactory.LoadResourceMesh("brick-gost") ?? ConstructionMeshFactory.CreateClayBrickMesh();
+                sharedClayBrickMesh = ConstructionMeshFactory.CreateClayBrickMesh();
             }
             mf.sharedMesh = sharedClayBrickMesh;
 
@@ -725,7 +799,7 @@ namespace Task12_16
             gi.itemType = GranularItem.GranularType.Brick;
 
             PickupableItem pi = brick.AddComponent<PickupableItem>();
-            pi.itemName = "Красный кирпич ГОСТ";
+            pi.itemName = "Красный кирпич с пустотами";
             pi.rb = rb;
 
             return brick;
@@ -741,15 +815,15 @@ namespace Task12_16
             MeshFilter mf = block.AddComponent<MeshFilter>();
             if (sharedConcreteBlockMesh == null)
             {
-                sharedConcreteBlockMesh = ConstructionMeshFactory.LoadResourceMesh("block-fbs") ?? ConstructionMeshFactory.CreateConcreteBlockFBSMesh();
+                sharedConcreteBlockMesh = ConstructionMeshFactory.CreateConcreteBlockFBSMesh();
             }
             mf.sharedMesh = sharedConcreteBlockMesh;
 
             MeshRenderer mr = block.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = matConcrete;
+            mr.sharedMaterial = matConcreteBlock;
 
             BoxCollider bc = block.AddComponent<BoxCollider>();
-            bc.size = new Vector3(0.96f, 0.46f, 0.44f);
+            bc.size = new Vector3(0.78f, 0.38f, 0.38f);
 
             PhysicsMaterial physMat = new PhysicsMaterial("ConcreteBlockPhysMat")
             {
@@ -1561,9 +1635,9 @@ namespace Task12_16
             {
                 GameObject excReal = Instantiate(prefabReal, root);
                 excReal.name = "Excavator";
-                excReal.transform.localPosition = new Vector3(4.5f, 0.22f, 5.5f);
+                excReal.transform.localPosition = new Vector3(4.2f, 0.22f, 5.5f);
                 excReal.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
-                excReal.transform.localScale = Vector3.one * 1.8f;
+                excReal.transform.localScale = Vector3.one * 0.95f;
 
                 StripColliders(excReal);
 
@@ -1595,43 +1669,24 @@ namespace Task12_16
                 }
 
                 BoxCollider underColReal = excReal.AddComponent<BoxCollider>();
-                underColReal.size = new Vector3(1.7f, 0.55f, 2.6f);
-                underColReal.center = new Vector3(0f, 0.28f, 0f);
+                underColReal.size = new Vector3(2.5f, 0.65f, 3.8f);
+                underColReal.center = new Vector3(0f, 0.325f, 0f);
 
                 Transform turret = FindChildDeep(excReal.transform, "TurnAxis");
                 Transform boom = FindChildDeep(excReal.transform, "BoomAxis");
                 Transform stick = FindChildDeep(excReal.transform, "ArmAxis");
                 Transform bucket = FindChildDeep(excReal.transform, "BucketAxis");
 
-                if (bucket != null)
-                {
-                    PhysicsMaterial bucketPhysMat = new PhysicsMaterial("BucketScoopPhysMat")
-                    {
-                        dynamicFriction = 0.15f,
-                        staticFriction = 0.25f,
-                        bounciness = 0.0f
-                    };
-                    BoxCollider btmCol = bucket.gameObject.AddComponent<BoxCollider>();
-                    btmCol.center = new Vector3(0f, -0.25f, 0.20f);
-                    btmCol.size = new Vector3(0.9f, 0.08f, 0.65f);
-                    btmCol.sharedMaterial = bucketPhysMat;
-
-                    BoxCollider backCol = bucket.gameObject.AddComponent<BoxCollider>();
-                    backCol.center = new Vector3(0f, -0.05f, -0.15f);
-                    backCol.size = new Vector3(0.9f, 0.40f, 0.08f);
-                    backCol.sharedMaterial = bucketPhysMat;
-                }
-
                 GameObject camObj = new GameObject("Excavator_Camera");
                 camObj.transform.SetParent(excReal.transform, false);
-                camObj.transform.localPosition = new Vector3(-2.4f, 3.8f, -4.6f);
+                camObj.transform.localPosition = new Vector3(-1.8f, 2.6f, -3.8f);
                 camObj.transform.localRotation = Quaternion.Euler(18f, 15f, 0f);
                 Camera cam = camObj.AddComponent<Camera>();
                 cam.enabled = false;
 
                 GameObject exitObj = new GameObject("Exit_Point");
                 exitObj.transform.SetParent(excReal.transform, false);
-                exitObj.transform.localPosition = new Vector3(-2.8f, 0f, 0.5f);
+                exitObj.transform.localPosition = new Vector3(-2.2f, 0f, 0.2f);
 
                 ExcavatorController ec = excReal.AddComponent<ExcavatorController>();
                 ec.isFbxRig = true;
@@ -1653,9 +1708,12 @@ namespace Task12_16
                 ec.bucketCylinderTarget = FindChildDeep(excReal.transform, "BucketCylinder1Target");
 
                 ec.currentTurretYaw = 0f;
-                ec.currentBoomAngle = -15f;
-                ec.currentStickAngle = 25f;
-                ec.currentBucketAngle = 10f;
+                // High travel position so bucket hovers cleanly above the ground
+                ec.currentBoomAngle = 18f;
+                ec.currentStickAngle = 60f;
+                ec.currentBucketAngle = 35f;
+
+                SnapToGround(excReal, 0.20f);
                 return;
             }
 

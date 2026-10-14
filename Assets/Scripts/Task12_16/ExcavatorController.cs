@@ -73,6 +73,7 @@ namespace Task12_16
                 // Keep upright (prevent tipping/flipping), but allow Y motion with gravity!
                 rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
                 rb.isKinematic = false;
+                rb.useGravity = true;
             }
 
             if (turret != null) turretStartRelRot = Quaternion.Inverse(transform.rotation) * turret.rotation;
@@ -393,9 +394,19 @@ namespace Task12_16
             if (Input.GetKey(KeyCode.D)) horiz += 1f;
 
             Vector3 moveTarget = transform.forward * (vert * driveSpeed);
-            float currentYVel = rb.linearVelocity.y;
-            currentYVel = Mathf.Max(currentYVel - 9.81f * Time.fixedDeltaTime, -15f);
-            rb.linearVelocity = new Vector3(moveTarget.x, currentYVel, moveTarget.z);
+            rb.linearVelocity = new Vector3(moveTarget.x, rb.linearVelocity.y, moveTarget.z);
+
+            // Safety floor boundary: prevent chassis from ever sinking beneath ground slab surface
+            if (transform.position.y < 0.16f)
+            {
+                Vector3 p = transform.position;
+                p.y = 0.20f;
+                transform.position = p;
+                if (rb.linearVelocity.y < 0f)
+                {
+                    rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+                }
+            }
 
             if (Mathf.Abs(horiz) > 0.01f)
             {
