@@ -1669,13 +1669,64 @@ namespace Task12_16
                 }
 
                 BoxCollider underColReal = excReal.AddComponent<BoxCollider>();
-                underColReal.size = new Vector3(2.5f, 0.65f, 3.8f);
+                underColReal.size = new Vector3(4.0f, 0.65f, 2.7f);
                 underColReal.center = new Vector3(0f, 0.325f, 0f);
 
                 Transform turret = FindChildDeep(excReal.transform, "TurnAxis");
                 Transform boom = FindChildDeep(excReal.transform, "BoomAxis");
                 Transform stick = FindChildDeep(excReal.transform, "ArmAxis");
                 Transform bucket = FindChildDeep(excReal.transform, "BucketAxis");
+
+                if (bucket != null)
+                {
+                    PhysicsMaterial bucketMat = new PhysicsMaterial("BucketPhysMat")
+                    {
+                        dynamicFriction = 0.8f,
+                        staticFriction = 0.9f,
+                        bounciness = 0.0f
+                    };
+
+                    // Floor plate of the scoop
+                    BoxCollider btmCol = bucket.gameObject.AddComponent<BoxCollider>();
+                    btmCol.center = new Vector3(0f, 0.85f, 0.04f);
+                    btmCol.size = new Vector3(1.06f, 0.76f, 0.08f);
+                    btmCol.sharedMaterial = bucketMat;
+
+                    // Back wall of the scoop
+                    BoxCollider backCol = bucket.gameObject.AddComponent<BoxCollider>();
+                    backCol.center = new Vector3(0f, 0.48f, 0.22f);
+                    backCol.size = new Vector3(1.06f, 0.08f, 0.42f);
+                    backCol.sharedMaterial = bucketMat;
+
+                    // Left side cheek
+                    BoxCollider leftCol = bucket.gameObject.AddComponent<BoxCollider>();
+                    leftCol.center = new Vector3(-0.52f, 0.80f, 0.20f);
+                    leftCol.size = new Vector3(0.06f, 0.72f, 0.40f);
+                    leftCol.sharedMaterial = bucketMat;
+
+                    // Right side cheek
+                    BoxCollider rightCol = bucket.gameObject.AddComponent<BoxCollider>();
+                    rightCol.center = new Vector3(0.52f, 0.80f, 0.20f);
+                    rightCol.size = new Vector3(0.06f, 0.72f, 0.40f);
+                    rightCol.sharedMaterial = bucketMat;
+
+                    // Ignore chassis collider
+                    Physics.IgnoreCollision(btmCol, underColReal, true);
+                    Physics.IgnoreCollision(backCol, underColReal, true);
+                    Physics.IgnoreCollision(leftCol, underColReal, true);
+                    Physics.IgnoreCollision(rightCol, underColReal, true);
+
+                    // Ignore site terrain & ground slab colliders so bucket penetrates smoothly into ground without physics jitter
+                    Collider[] sceneCols = root.GetComponentsInChildren<Collider>(true);
+                    for (int c = 0; c < sceneCols.Length; c++)
+                    {
+                        if (sceneCols[c] == null || sceneCols[c].GetComponent<GranularItem>() != null) continue;
+                        Physics.IgnoreCollision(btmCol, sceneCols[c], true);
+                        Physics.IgnoreCollision(backCol, sceneCols[c], true);
+                        Physics.IgnoreCollision(leftCol, sceneCols[c], true);
+                        Physics.IgnoreCollision(rightCol, sceneCols[c], true);
+                    }
+                }
 
                 GameObject camObj = new GameObject("Excavator_Camera");
                 camObj.transform.SetParent(excReal.transform, false);
@@ -1699,10 +1750,10 @@ namespace Task12_16
                 ec.exitTransform = exitObj.transform;
 
                 ec.currentTurretYaw = 0f;
-                // Raised travel position so bucket hovers cleanly above ground
-                ec.currentBoomAngle = -28f;
-                ec.currentStickAngle = 30f;
-                ec.currentBucketAngle = 10f;
+                // Raised travel position matching user reference screenshot
+                ec.currentBoomAngle = -42f;
+                ec.currentStickAngle = 55f;
+                ec.currentBucketAngle = 45f;
 
                 SnapToGround(excReal, 0.20f);
                 return;

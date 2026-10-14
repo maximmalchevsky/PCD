@@ -208,10 +208,10 @@ namespace Task12_16
 
             float currentLocalY = GetHeightAtLocal(localPt.x, localPt.z);
             float targetLocalY = transform.InverseTransformPoint(new Vector3(localPt.x, targetWorldY, localPt.z)).y;
-            // Always ensure digging cuts into soil if bucket touches surface
-            if (targetLocalY >= currentLocalY)
+            // Never dig if target depth is above current surface
+            if (targetLocalY >= currentLocalY - 0.01f)
             {
-                targetLocalY = currentLocalY - 0.12f;
+                return false;
             }
             targetLocalY = Mathf.Max(targetLocalY, maxDigDepth);
 

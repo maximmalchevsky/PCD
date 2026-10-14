@@ -19,9 +19,9 @@ namespace Task12_16
         public float steerSpeed = 44f;
 
         public float currentTurretYaw = 0f;
-        public float currentBoomAngle = -28f;
-        public float currentStickAngle = 30f;
-        public float currentBucketAngle = 10f;
+        public float currentBoomAngle = -42f;
+        public float currentStickAngle = 55f;
+        public float currentBucketAngle = 45f;
 
         // Smooth Mouse Orbit Camera & Cab View
         public float cameraDistance = 7.5f;
@@ -223,7 +223,6 @@ namespace Task12_16
 
             // Perform real-time ground digging and scooping
             UpdateGroundDigging(boomInput, stickInput, bucketInput);
-            UpdateScoopCargoRetention();
         }
 
         protected virtual void LateUpdate()
@@ -288,7 +287,15 @@ namespace Task12_16
                 for (int t = 0; t < fbxTeeth.Length; t++)
                 {
                     if (fbxTeeth[t] == null) continue;
-                    ProcessDiggingPoint(fbxTeeth[t].position, isDiggingMotion);
+                    Vector3 toothPos = fbxTeeth[t].position;
+                    float groundWorldY = DiggableEarth.Instance.GetHeightAtWorld(toothPos);
+
+                    // ONLY dig if teeth actually touch or penetrate ground surface AND user is performing digging action!
+                    if (toothPos.y <= groundWorldY + 0.02f && isDiggingMotion)
+                    {
+                        ProcessDiggingPoint(toothPos, true);
+                        break; // Process one excavation step per frame to avoid multi-tooth explosion
+                    }
                 }
             }
             else
@@ -297,7 +304,13 @@ namespace Task12_16
                 {
                     Vector3 toothLocal = new Vector3(toothXOffsets[t], TOOTH_LOCAL_Y, TOOTH_LOCAL_Z);
                     Vector3 toothWorld = bucket.TransformPoint(toothLocal);
-                    ProcessDiggingPoint(toothWorld, isDiggingMotion);
+                    float groundWorldY = DiggableEarth.Instance.GetHeightAtWorld(toothWorld);
+
+                    if (toothWorld.y <= groundWorldY + 0.02f && isDiggingMotion)
+                    {
+                        ProcessDiggingPoint(toothWorld, true);
+                        break;
+                    }
                 }
             }
         }
@@ -305,32 +318,32 @@ namespace Task12_16
         private void ProcessDiggingPoint(Vector3 toothWorld, bool isDiggingMotion)
         {
             float groundWorldY = DiggableEarth.Instance.GetHeightAtWorld(toothWorld);
+            if (toothWorld.y > groundWorldY + 0.02f) return;
 
-            if (isDiggingMotion || toothWorld.y <= groundWorldY + 0.15f)
+            float digDepth = Mathf.Max(toothWorld.y - 0.06f, DiggableEarth.Instance.maxDigDepth);
+            if (DiggableEarth.Instance.DigAt(toothWorld, 0.75f, digDepth, out float volumeRemoved))
             {
-                float digDepth = toothWorld.y - 0.12f;
-                if (DiggableEarth.Instance.DigAt(toothWorld, 0.85f, digDepth, out float volumeRemoved))
+                if (digDustCooldown <= 0f)
                 {
-                    if (digDustCooldown <= 0f)
+                    EmitDiggingDust(toothWorld);
+                    digDustCooldown = 0.15f;
+                }
+
+                if (DiggableEarth.Instance.accumulatedSoilVolume >= DiggableEarth.VOLUME_PER_SOIL_CHUNK)
+                {
+                    DiggableEarth.Instance.accumulatedSoilVolume -= DiggableEarth.VOLUME_PER_SOIL_CHUNK;
+                    totalExcavatedChunks++;
+
+                    // Spawn chunk inside the bucket cavity
+                    Vector3 toBucket = (bucket.position - toothWorld).normalized;
+                    Vector3 spawnPos = toothWorld + toBucket * 0.45f + Vector3.up * 0.15f;
+                    Vector3 initialVel = toBucket * 0.5f + Vector3.up * 0.2f;
+                    GameObject newChunk = DiggableEarth.Instance.SpawnExcavatedSoilChunk(spawnPos, initialVel);
+
+                    if (chassisCollider != null && newChunk != null)
                     {
-                        EmitDiggingDust(toothWorld);
-                        digDustCooldown = 0.10f;
-                    }
-
-                    if (DiggableEarth.Instance.accumulatedSoilVolume >= DiggableEarth.VOLUME_PER_SOIL_CHUNK)
-                    {
-                        DiggableEarth.Instance.accumulatedSoilVolume -= DiggableEarth.VOLUME_PER_SOIL_CHUNK;
-                        totalExcavatedChunks++;
-
-                        Vector3 spawnPos = toothWorld - bucket.forward * 0.40f + bucket.up * 0.30f;
-                        Vector3 initialVel = -bucket.forward * 1.8f + Vector3.up * 1.0f;
-                        GameObject newChunk = DiggableEarth.Instance.SpawnExcavatedSoilChunk(spawnPos, initialVel);
-
-                        if (chassisCollider != null && newChunk != null)
-                        {
-                            Collider col = newChunk.GetComponent<Collider>();
-                            if (col != null) Physics.IgnoreCollision(chassisCollider, col, true);
-                        }
+                        Collider col = newChunk.GetComponent<Collider>();
+                        if (col != null) Physics.IgnoreCollision(chassisCollider, col, true);
                     }
                 }
             }
@@ -341,34 +354,6 @@ namespace Task12_16
             GameObject dustObj = new GameObject("Dirt_Puff");
             dustObj.transform.position = position;
             Destroy(dustObj, 0.6f);
-        }
-
-        private void UpdateScoopCargoRetention()
-        {
-            if (bucket == null) return;
-
-            if (currentBucketAngle >= 5f)
-            {
-                Vector3 bucketCavity = bucket.position + bucket.forward * 0.15f + bucket.up * 0.10f;
-                Collider[] hits = Physics.OverlapSphere(bucketCavity, 1.4f);
-                for (int i = 0; i < hits.Length; i++)
-                {
-                    if (hits[i] == null) continue;
-                    GranularItem item = hits[i].GetComponent<GranularItem>();
-                    if (item != null)
-                    {
-                        Rigidbody irb = item.GetComponent<Rigidbody>();
-                        if (irb != null && !irb.isKinematic)
-                        {
-                            Vector3 toCavity = bucketCavity - irb.position;
-                            if (toCavity.sqrMagnitude > 0.02f)
-                            {
-                                irb.AddForce(toCavity * 16f, ForceMode.Acceleration);
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         void FixedUpdate()
@@ -387,7 +372,9 @@ namespace Task12_16
             if (Input.GetKey(KeyCode.A)) horiz -= 1f;
             if (Input.GetKey(KeyCode.D)) horiz += 1f;
 
-            Vector3 moveTarget = transform.forward * (vert * driveSpeed);
+            // In FBX rig, tracks roll along -X; in procedural rig, along +Z
+            Vector3 trackForward = isFbxRig ? -transform.right : transform.forward;
+            Vector3 moveTarget = trackForward * (vert * driveSpeed);
             rb.linearVelocity = new Vector3(moveTarget.x, rb.linearVelocity.y, moveTarget.z);
 
             // Safety floor boundary: prevent chassis from ever sinking beneath ground slab surface
