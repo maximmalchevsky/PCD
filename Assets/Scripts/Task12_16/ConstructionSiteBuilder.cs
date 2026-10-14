@@ -1698,20 +1698,11 @@ namespace Task12_16
                 ec.vehicleCamera = cam;
                 ec.exitTransform = exitObj.transform;
 
-                ec.boomCylinderLeft = FindChildDeep(excReal.transform, "BoomCylinderLeftAxis1");
-                ec.boomCylinderLeftTarget = FindChildDeep(excReal.transform, "BoomCylinderLeft1Target");
-                ec.boomCylinderRight = FindChildDeep(excReal.transform, "BoomCylinderRightAxis1");
-                ec.boomCylinderRightTarget = FindChildDeep(excReal.transform, "BoomCylinderRight1Target");
-                ec.armCylinder = FindChildDeep(excReal.transform, "ArmCylinderAxis1");
-                ec.armCylinderTarget = FindChildDeep(excReal.transform, "ArmCylinder1Target");
-                ec.bucketCylinder = FindChildDeep(excReal.transform, "BucketCylinderAxis1");
-                ec.bucketCylinderTarget = FindChildDeep(excReal.transform, "BucketCylinder1Target");
-
                 ec.currentTurretYaw = 0f;
-                // High travel position so bucket hovers cleanly above the ground
-                ec.currentBoomAngle = 18f;
-                ec.currentStickAngle = 60f;
-                ec.currentBucketAngle = 35f;
+                // Raised travel position so bucket hovers cleanly above ground
+                ec.currentBoomAngle = -28f;
+                ec.currentStickAngle = 30f;
+                ec.currentBucketAngle = 10f;
 
                 SnapToGround(excReal, 0.20f);
                 return;

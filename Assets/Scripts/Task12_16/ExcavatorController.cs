@@ -19,8 +19,8 @@ namespace Task12_16
         public float steerSpeed = 44f;
 
         public float currentTurretYaw = 0f;
-        public float currentBoomAngle = -15f;
-        public float currentStickAngle = 25f;
+        public float currentBoomAngle = -28f;
+        public float currentStickAngle = 30f;
         public float currentBucketAngle = 10f;
 
         // Smooth Mouse Orbit Camera & Cab View
@@ -120,12 +120,6 @@ namespace Task12_16
                 if (boom != null) boom.localRotation = boomInitialRot * Quaternion.Euler(currentBoomAngle, 0f, 0f);
                 if (stick != null) stick.localRotation = stickInitialRot * Quaternion.Euler(-currentStickAngle, 0f, 0f);
                 if (bucket != null) bucket.localRotation = bucketInitialRot * Quaternion.Euler(currentBucketAngle, 0f, 0f);
-
-                // Update hydraulic cylinder look-at targets for photorealistic motion
-                if (boomCylinderLeft != null && boomCylinderLeftTarget != null) boomCylinderLeft.LookAt(boomCylinderLeftTarget.position, transform.up);
-                if (boomCylinderRight != null && boomCylinderRightTarget != null) boomCylinderRight.LookAt(boomCylinderRightTarget.position, transform.up);
-                if (armCylinder != null && armCylinderTarget != null) armCylinder.LookAt(armCylinderTarget.position, transform.up);
-                if (bucketCylinder != null && bucketCylinderTarget != null) bucketCylinder.LookAt(bucketCylinderTarget.position, transform.up);
             }
             else
             {
@@ -207,23 +201,23 @@ namespace Task12_16
             if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.RightArrow)) yawInput += 1f;
             currentTurretYaw += yawInput * turretSpeed * Time.deltaTime;
 
-            // 2. Boom elevation (R / F or Up / Down Arrows)
+            // 2. Boom elevation: R / UpArrow = Lift Boom UP, F / DownArrow = Lower Boom DOWN
             float boomInput = 0f;
-            if (Input.GetKey(KeyCode.R) || Input.GetKey(KeyCode.UpArrow)) boomInput += 1f;
-            if (Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.DownArrow)) boomInput -= 1f;
-            currentBoomAngle = Mathf.Clamp(currentBoomAngle + boomInput * boomSpeed * Time.deltaTime, -58f, 22f);
+            if (Input.GetKey(KeyCode.R) || Input.GetKey(KeyCode.UpArrow)) boomInput -= 1f;  // Upward lift
+            if (Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.DownArrow)) boomInput += 1f; // Downward lower
+            currentBoomAngle = Mathf.Clamp(currentBoomAngle + boomInput * boomSpeed * Time.deltaTime, -60f, 30f);
 
-            // 3. Stick arm (T / G or I / K)
+            // 3. Stick arm: T / I = Reach stick OUT, G / K = Pull stick IN
             float stickInput = 0f;
-            if (Input.GetKey(KeyCode.T) || Input.GetKey(KeyCode.I)) stickInput += 1f;
-            if (Input.GetKey(KeyCode.G) || Input.GetKey(KeyCode.K)) stickInput -= 1f;
-            currentStickAngle = Mathf.Clamp(currentStickAngle + stickInput * stickSpeed * Time.deltaTime, 5f, 118f);
+            if (Input.GetKey(KeyCode.T) || Input.GetKey(KeyCode.I)) stickInput -= 1f; // Outward extension
+            if (Input.GetKey(KeyCode.G) || Input.GetKey(KeyCode.K)) stickInput += 1f; // Inward curl
+            currentStickAngle = Mathf.Clamp(currentStickAngle + stickInput * stickSpeed * Time.deltaTime, -10f, 85f);
 
-            // 4. Bucket tilt (Space / C or J / L)
+            // 4. Bucket tilt: Space / J = Curl IN (Scoop), C / L = Tilt OUT (Dump)
             float bucketInput = 0f;
-            if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.J)) bucketInput += 1f;
-            if (Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.L)) bucketInput -= 1f;
-            currentBucketAngle = Mathf.Clamp(currentBucketAngle + bucketInput * bucketSpeed * Time.deltaTime, -52f, 88f);
+            if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.J)) bucketInput += 1f; // Scoop / curl
+            if (Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.L)) bucketInput -= 1f;     // Dump / empty
+            currentBucketAngle = Mathf.Clamp(currentBucketAngle + bucketInput * bucketSpeed * Time.deltaTime, -55f, 75f);
 
             UpdateJointRotations();
 
@@ -283,8 +277,8 @@ namespace Task12_16
         {
             if (bucket == null || DiggableEarth.Instance == null) return;
 
-            // Digging motion is active when curling bucket, pulling stick, lowering boom, or pressing Space/J/G/F
-            bool isDiggingMotion = bucketInput > 0.05f || stickInput < -0.05f || boomInput < -0.05f ||
+            // Digging motion is active when curling bucket, pulling stick in, lowering boom, or pressing Space/J/G/F
+            bool isDiggingMotion = bucketInput > 0.05f || stickInput > 0.05f || boomInput > 0.05f ||
                                    Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.J) || Input.GetKey(KeyCode.G) || Input.GetKey(KeyCode.F);
 
             digDustCooldown -= Time.deltaTime;
