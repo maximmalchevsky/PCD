@@ -172,6 +172,22 @@ namespace Task12_16
             isMeshDirty = false;
         }
 
+        public float GetHeightAtLocal(float localX, float localZ)
+        {
+            if (vertices == null) return 0f;
+            int x0 = Mathf.Clamp(Mathf.FloorToInt((localX - minLocalX) / dx), 0, gridResolutionX);
+            int z0 = Mathf.Clamp(Mathf.FloorToInt((localZ - minLocalZ) / dz), 0, gridResolutionZ);
+            int idx = z0 * (gridResolutionX + 1) + x0;
+            return vertices[idx].y;
+        }
+
+        public float GetHeightAtWorld(Vector3 worldPoint)
+        {
+            Vector3 localPt = transform.InverseTransformPoint(worldPoint);
+            float h = GetHeightAtLocal(localPt.x, localPt.z);
+            return transform.TransformPoint(new Vector3(localPt.x, h, localPt.z)).y;
+        }
+
         /// <summary>
         /// Carves soil at the specified world position downwards to targetWorldY.
         /// Returns true if soil was carved, along with volume removed in m3.
@@ -182,8 +198,6 @@ namespace Task12_16
             if (vertices == null) return false;
 
             Vector3 localPt = transform.InverseTransformPoint(worldPoint);
-            float targetLocalY = transform.InverseTransformPoint(new Vector3(0f, targetWorldY, 0f)).y;
-            targetLocalY = Mathf.Max(targetLocalY, maxDigDepth);
 
             // Bounds check
             if (localPt.x < minLocalX - radius || localPt.x > maxLocalX + radius ||
@@ -191,6 +205,15 @@ namespace Task12_16
             {
                 return false;
             }
+
+            float currentLocalY = GetHeightAtLocal(localPt.x, localPt.z);
+            float targetLocalY = transform.InverseTransformPoint(new Vector3(localPt.x, targetWorldY, localPt.z)).y;
+            // Always ensure digging cuts into soil if bucket touches surface
+            if (targetLocalY >= currentLocalY)
+            {
+                targetLocalY = currentLocalY - 0.12f;
+            }
+            targetLocalY = Mathf.Max(targetLocalY, maxDigDepth);
 
             int minX = Mathf.Clamp(Mathf.FloorToInt((localPt.x - radius - minLocalX) / dx), 0, gridResolutionX);
             int maxX = Mathf.Clamp(Mathf.CeilToInt((localPt.x + radius - minLocalX) / dx), 0, gridResolutionX);

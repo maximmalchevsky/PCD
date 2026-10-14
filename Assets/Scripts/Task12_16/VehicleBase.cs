@@ -151,11 +151,6 @@ namespace Task12_16
                 vehicleRb.isKinematic = true;
             }
 
-            if (transform.position.y > 0.35f && !(this is TowerCraneController))
-            {
-                transform.position = new Vector3(transform.position.x, 0.22f, transform.position.z);
-            }
-
             if (vehicleCamera != null)
             {
                 vehicleCamera.enabled = false;
@@ -163,10 +158,22 @@ namespace Task12_16
                 if (al != null) al.enabled = false;
             }
 
-            Vector3 spawnPos = exitTransform != null ? exitTransform.position : transform.position + transform.right * 3f + Vector3.up * 0.1f;
+            Vector3 exitCandidate = (exitTransform != null) ? exitTransform.position : transform.position + transform.right * 2.8f;
+            // Raycast downwards from 5m above to locate the exact top surface of terrain or ground slab
+            if (Physics.Raycast(new Vector3(exitCandidate.x, transform.position.y + 4.5f, exitCandidate.z), Vector3.down, out RaycastHit hit, 15f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                exitCandidate.y = hit.point.y + 0.15f;
+            }
+            else
+            {
+                exitCandidate.y = Mathf.Max(exitCandidate.y, 0.45f);
+            }
+
+            if (playerCC != null) playerCC.enabled = false;
             if (playerObj != null)
             {
-                playerObj.transform.position = spawnPos;
+                playerObj.transform.position = exitCandidate;
+                Physics.SyncTransforms();
             }
 
             if (playerRenderers != null)

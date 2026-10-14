@@ -42,6 +42,22 @@ namespace Task12_16
         private const float TOOTH_LOCAL_Y = -0.44f;
         private const float TOOTH_LOCAL_Z = 0.95f;
 
+        public bool isFbxRig = false;
+        private Quaternion turretStartRelRot = Quaternion.identity;
+        private Quaternion boomInitialRot = Quaternion.identity;
+        private Quaternion stickInitialRot = Quaternion.identity;
+        private Quaternion bucketInitialRot = Quaternion.identity;
+        private Transform[] fbxTeeth;
+
+        public Transform boomCylinderLeft;
+        public Transform boomCylinderRight;
+        public Transform boomCylinderLeftTarget;
+        public Transform boomCylinderRightTarget;
+        public Transform armCylinder;
+        public Transform armCylinderTarget;
+        public Transform bucketCylinder;
+        public Transform bucketCylinderTarget;
+
         protected override void Start()
         {
             vehicleName = "Гусеничный экскаватор";
@@ -54,18 +70,69 @@ namespace Task12_16
                 rb.linearDamping = 1.8f;
                 rb.angularDamping = 3.5f;
                 rb.centerOfMass = new Vector3(0f, -0.4f, 0f);
-                // Freeze X/Z tilt AND freeze Y so blocks cannot lift or flip the excavator!
-                rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
+                // Keep upright (prevent tipping/flipping), but allow Y motion with gravity!
+                rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
                 rb.isKinematic = false;
+            }
+
+            if (turret != null) turretStartRelRot = Quaternion.Inverse(transform.rotation) * turret.rotation;
+            if (boom != null) boomInitialRot = boom.localRotation;
+            if (stick != null) stickInitialRot = stick.localRotation;
+            if (bucket != null) bucketInitialRot = bucket.localRotation;
+
+            if (isFbxRig && bucket != null)
+            {
+                var teethList = new System.Collections.Generic.List<Transform>();
+                for (int b = 1; b <= 10; b++)
+                {
+                    string bName = "Bolt." + b.ToString("D3");
+                    Transform t = FindDeep(bucket, bName);
+                    if (t != null) teethList.Add(t);
+                }
+                if (teethList.Count > 0) fbxTeeth = teethList.ToArray();
             }
 
             if (chassisCollider == null) chassisCollider = GetComponent<Collider>();
             IgnoreCargoCollisions();
 
-            if (turret != null) turret.localRotation = Quaternion.Euler(0f, currentTurretYaw, 0f);
-            if (boom != null) boom.localRotation = Quaternion.Euler(currentBoomAngle, 0f, 0f);
-            if (stick != null) stick.localRotation = Quaternion.Euler(currentStickAngle, 0f, 0f);
-            if (bucket != null) bucket.localRotation = Quaternion.Euler(currentBucketAngle, 0f, 0f);
+            UpdateJointRotations();
+        }
+
+        private static Transform FindDeep(Transform parent, string name)
+        {
+            if (parent == null) return null;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name.Equals(name, System.StringComparison.OrdinalIgnoreCase)) return child;
+                Transform deep = FindDeep(child, name);
+                if (deep != null) return deep;
+            }
+            return null;
+        }
+
+        private void UpdateJointRotations()
+        {
+            if (isFbxRig)
+            {
+                if (turret != null) turret.rotation = transform.rotation * Quaternion.Euler(0f, currentTurretYaw, 0f) * turretStartRelRot;
+                if (boom != null) boom.localRotation = boomInitialRot * Quaternion.Euler(currentBoomAngle, 0f, 0f);
+                if (stick != null) stick.localRotation = stickInitialRot * Quaternion.Euler(-currentStickAngle, 0f, 0f);
+                if (bucket != null) bucket.localRotation = bucketInitialRot * Quaternion.Euler(currentBucketAngle, 0f, 0f);
+
+                // Update hydraulic cylinder look-at targets for photorealistic motion
+                if (boomCylinderLeft != null && boomCylinderLeftTarget != null) boomCylinderLeft.LookAt(boomCylinderLeftTarget.position, transform.up);
+                if (boomCylinderRight != null && boomCylinderRightTarget != null) boomCylinderRight.LookAt(boomCylinderRightTarget.position, transform.up);
+                if (armCylinder != null && armCylinderTarget != null) armCylinder.LookAt(armCylinderTarget.position, transform.up);
+                if (bucketCylinder != null && bucketCylinderTarget != null) bucketCylinder.LookAt(bucketCylinderTarget.position, transform.up);
+            }
+            else
+            {
+                if (turret != null) turret.localRotation = Quaternion.Euler(0f, currentTurretYaw, 0f);
+                if (boom != null) boom.localRotation = Quaternion.Euler(currentBoomAngle, 0f, 0f);
+                if (stick != null) stick.localRotation = Quaternion.Euler(currentStickAngle, 0f, 0f);
+                if (bucket != null) bucket.localRotation = Quaternion.Euler(currentBucketAngle, 0f, 0f);
+            }
         }
 
         public override void EnterVehicle()
@@ -157,10 +224,7 @@ namespace Task12_16
             if (Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.L)) bucketInput -= 1f;
             currentBucketAngle = Mathf.Clamp(currentBucketAngle + bucketInput * bucketSpeed * Time.deltaTime, -52f, 88f);
 
-            if (turret != null) turret.localRotation = Quaternion.Euler(0f, currentTurretYaw, 0f);
-            if (boom != null) boom.localRotation = Quaternion.Euler(currentBoomAngle, 0f, 0f);
-            if (stick != null) stick.localRotation = Quaternion.Euler(currentStickAngle, 0f, 0f);
-            if (bucket != null) bucket.localRotation = Quaternion.Euler(currentBucketAngle, 0f, 0f);
+            UpdateJointRotations();
 
             // Perform real-time ground digging and scooping
             UpdateGroundDigging(boomInput, stickInput, bucketInput);
@@ -218,41 +282,59 @@ namespace Task12_16
         {
             if (bucket == null || DiggableEarth.Instance == null) return;
 
-            // Digging motion is engaged when curling bucket (Space), pulling stick (G), or lowering boom (F)
-            bool isDiggingMotion = bucketInput > 0.05f || stickInput < -0.05f || boomInput < -0.05f;
+            // Digging motion is active when curling bucket, pulling stick, lowering boom, or pressing Space/J/G/F
+            bool isDiggingMotion = bucketInput > 0.05f || stickInput < -0.05f || boomInput < -0.05f ||
+                                   Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.J) || Input.GetKey(KeyCode.G) || Input.GetKey(KeyCode.F);
 
             digDustCooldown -= Time.deltaTime;
 
-            for (int t = 0; t < toothXOffsets.Length; t++)
+            if (isFbxRig && fbxTeeth != null && fbxTeeth.Length > 0)
             {
-                Vector3 toothLocal = new Vector3(toothXOffsets[t], TOOTH_LOCAL_Y, TOOTH_LOCAL_Z);
-                Vector3 toothWorld = bucket.TransformPoint(toothLocal);
-
-                if (isDiggingMotion)
+                for (int t = 0; t < fbxTeeth.Length; t++)
                 {
-                    float digDepth = toothWorld.y - 0.08f;
-                    if (DiggableEarth.Instance.DigAt(toothWorld, 0.65f, digDepth, out float volumeRemoved))
+                    if (fbxTeeth[t] == null) continue;
+                    ProcessDiggingPoint(fbxTeeth[t].position, isDiggingMotion);
+                }
+            }
+            else
+            {
+                for (int t = 0; t < toothXOffsets.Length; t++)
+                {
+                    Vector3 toothLocal = new Vector3(toothXOffsets[t], TOOTH_LOCAL_Y, TOOTH_LOCAL_Z);
+                    Vector3 toothWorld = bucket.TransformPoint(toothLocal);
+                    ProcessDiggingPoint(toothWorld, isDiggingMotion);
+                }
+            }
+        }
+
+        private void ProcessDiggingPoint(Vector3 toothWorld, bool isDiggingMotion)
+        {
+            float groundWorldY = DiggableEarth.Instance.GetHeightAtWorld(toothWorld);
+
+            if (isDiggingMotion || toothWorld.y <= groundWorldY + 0.15f)
+            {
+                float digDepth = toothWorld.y - 0.12f;
+                if (DiggableEarth.Instance.DigAt(toothWorld, 0.85f, digDepth, out float volumeRemoved))
+                {
+                    if (digDustCooldown <= 0f)
                     {
-                        if (digDustCooldown <= 0f)
+                        EmitDiggingDust(toothWorld);
+                        digDustCooldown = 0.10f;
+                    }
+
+                    if (DiggableEarth.Instance.accumulatedSoilVolume >= DiggableEarth.VOLUME_PER_SOIL_CHUNK)
+                    {
+                        DiggableEarth.Instance.accumulatedSoilVolume -= DiggableEarth.VOLUME_PER_SOIL_CHUNK;
+                        totalExcavatedChunks++;
+
+                        Vector3 spawnPos = toothWorld - bucket.forward * 0.40f + bucket.up * 0.30f;
+                        Vector3 initialVel = -bucket.forward * 1.8f + Vector3.up * 1.0f;
+                        GameObject newChunk = DiggableEarth.Instance.SpawnExcavatedSoilChunk(spawnPos, initialVel);
+
+                        if (chassisCollider != null && newChunk != null)
                         {
-                            EmitDiggingDust(toothWorld);
-                            digDustCooldown = 0.12f;
-                        }
-
-                        if (DiggableEarth.Instance.accumulatedSoilVolume >= DiggableEarth.VOLUME_PER_SOIL_CHUNK)
-                        {
-                            DiggableEarth.Instance.accumulatedSoilVolume -= DiggableEarth.VOLUME_PER_SOIL_CHUNK;
-                            totalExcavatedChunks++;
-
-                            Vector3 spawnPos = toothWorld - bucket.forward * 0.35f + bucket.up * 0.25f;
-                            Vector3 initialVel = -bucket.forward * 1.6f + Vector3.up * 0.9f;
-                            GameObject newChunk = DiggableEarth.Instance.SpawnExcavatedSoilChunk(spawnPos, initialVel);
-
-                            if (chassisCollider != null && newChunk != null)
-                            {
-                                Collider col = newChunk.GetComponent<Collider>();
-                                if (col != null) Physics.IgnoreCollision(chassisCollider, col, true);
-                            }
+                            Collider col = newChunk.GetComponent<Collider>();
+                            if (col != null) Physics.IgnoreCollision(chassisCollider, col, true);
                         }
                     }
                 }
@@ -311,7 +393,9 @@ namespace Task12_16
             if (Input.GetKey(KeyCode.D)) horiz += 1f;
 
             Vector3 moveTarget = transform.forward * (vert * driveSpeed);
-            rb.linearVelocity = new Vector3(moveTarget.x, 0f, moveTarget.z);
+            float currentYVel = rb.linearVelocity.y;
+            currentYVel = Mathf.Max(currentYVel - 9.81f * Time.fixedDeltaTime, -15f);
+            rb.linearVelocity = new Vector3(moveTarget.x, currentYVel, moveTarget.z);
 
             if (Mathf.Abs(horiz) > 0.01f)
             {

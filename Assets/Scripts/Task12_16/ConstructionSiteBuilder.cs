@@ -164,16 +164,61 @@ namespace Task12_16
 
             Shader litShader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
 
-            matDirt = CreateMat("Mat_Site_Dirt", litShader, new Color(0.38f, 0.28f, 0.17f), 0.1f, 0f);
-            matConcrete = CreateMat("Mat_Site_Concrete", litShader, new Color(0.70f, 0.70f, 0.72f), 0.2f, 0.05f);
-            matYellow = CreateMat("Mat_Site_Yellow", litShader, new Color(0.96f, 0.76f, 0.06f), 0.6f, 0.2f);
-            matOrange = CreateMat("Mat_Site_Orange", litShader, new Color(0.95f, 0.45f, 0.05f), 0.6f, 0.2f);
-            matDarkMetal = CreateMat("Mat_Site_DarkMetal", litShader, new Color(0.20f, 0.21f, 0.24f), 0.4f, 0.5f);
-            matSand = CreateMat("Mat_Site_Sand", litShader, new Color(0.82f, 0.71f, 0.46f), 0.1f, 0f);
-            matRock = CreateMat("Mat_Site_Rock", litShader, new Color(0.48f, 0.49f, 0.51f), 0.15f, 0f);
-            matBrick = CreateMat("Mat_Site_Brick", litShader, new Color(0.74f, 0.28f, 0.18f), 0.1f, 0f);
-            matWood = CreateMat("Mat_Site_Wood", litShader, new Color(0.58f, 0.42f, 0.26f), 0.2f, 0f);
-            matGlass = CreateMat("Mat_Site_Glass", litShader, new Color(0.5f, 0.75f, 0.85f, 0.8f), 0.9f, 0.1f);
+            Texture2D dirtColorTex = Resources.Load<Texture2D>("dirt_color");
+            if (dirtColorTex == null)
+            {
+                string p = System.IO.Path.Combine(Application.dataPath, "Resources", "dirt_color.jpg");
+                if (System.IO.File.Exists(p))
+                {
+                    dirtColorTex = new Texture2D(2, 2);
+                    dirtColorTex.LoadImage(System.IO.File.ReadAllBytes(p));
+                    dirtColorTex.wrapMode = TextureWrapMode.Repeat;
+                }
+            }
+
+            Texture2D dirtNormTex = Resources.Load<Texture2D>("dirt_normal");
+            if (dirtNormTex == null)
+            {
+                string p = System.IO.Path.Combine(Application.dataPath, "Resources", "dirt_normal.jpg");
+                if (System.IO.File.Exists(p))
+                {
+                    dirtNormTex = new Texture2D(2, 2);
+                    dirtNormTex.LoadImage(System.IO.File.ReadAllBytes(p));
+                    dirtNormTex.wrapMode = TextureWrapMode.Repeat;
+                }
+            }
+
+            matDirt = CreateMat("Mat_Site_Dirt", litShader, Color.white, 0.08f, 0f);
+            if (dirtColorTex != null)
+            {
+                matDirt.mainTexture = dirtColorTex;
+                if (matDirt.HasProperty("_BaseMap")) matDirt.SetTexture("_BaseMap", dirtColorTex);
+                matDirt.mainTextureScale = new Vector2(10f, 10f);
+            }
+            if (dirtNormTex != null && matDirt.HasProperty("_BumpMap"))
+            {
+                matDirt.SetTexture("_BumpMap", dirtNormTex);
+                matDirt.EnableKeyword("_NORMALMAP");
+            }
+
+            matConcrete = CreateMat("Mat_Site_Concrete", litShader, new Color(0.70f, 0.70f, 0.72f), 0.15f, 0.02f);
+            matYellow = CreateMat("Mat_Site_Yellow", litShader, new Color(0.96f, 0.65f, 0.04f), 0.18f, 0.05f);
+            matOrange = CreateMat("Mat_Site_Orange", litShader, new Color(0.95f, 0.45f, 0.05f), 0.20f, 0.05f);
+            matDarkMetal = CreateMat("Mat_Site_DarkMetal", litShader, new Color(0.18f, 0.19f, 0.21f), 0.25f, 0.65f);
+            matSand = CreateMat("Mat_Site_Sand", litShader, new Color(0.82f, 0.71f, 0.46f), 0.08f, 0f);
+            matRock = CreateMat("Mat_Site_Rock", litShader, new Color(0.48f, 0.49f, 0.51f), 0.12f, 0f);
+            matBrick = CreateMat("Mat_Site_Brick", litShader, new Color(0.74f, 0.28f, 0.18f), 0.12f, 0f);
+            matWood = CreateMat("Mat_Site_Wood", litShader, new Color(0.58f, 0.42f, 0.26f), 0.15f, 0f);
+
+            matGlass = CreateMat("Mat_Site_Glass", litShader, new Color(0.45f, 0.70f, 0.85f, 0.35f), 0.95f, 0.05f);
+            matGlass.SetFloat("_Surface", 1); // 1 = Transparent
+            matGlass.SetFloat("_Blend", 0);
+            matGlass.SetOverrideTag("RenderType", "Transparent");
+            matGlass.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            matGlass.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            matGlass.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            matGlass.SetInt("_ZWrite", 0);
+            matGlass.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
 
             matVehicles = Resources.Load<Material>("Mat_Vehicles");
             matTrain = Resources.Load<Material>("Mat_TrainKit");
@@ -1510,6 +1555,114 @@ namespace Task12_16
         }
 
         private void BuildExcavator(Transform root)
+        {
+            GameObject prefabReal = Resources.Load<GameObject>("real-excavator");
+            if (prefabReal != null)
+            {
+                GameObject excReal = Instantiate(prefabReal, root);
+                excReal.name = "Excavator";
+                excReal.transform.localPosition = new Vector3(4.5f, 0.22f, 5.5f);
+                excReal.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
+                excReal.transform.localScale = Vector3.one * 1.8f;
+
+                StripColliders(excReal);
+
+                // Apply realistic Caterpillar industrial PBR materials
+                Renderer[] rends = excReal.GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < rends.Length; i++)
+                {
+                    Renderer r = rends[i];
+                    if (r == null) continue;
+                    Material[] mats = r.sharedMaterials;
+                    for (int m = 0; m < mats.Length; m++)
+                    {
+                        string matName = mats[m] != null ? mats[m].name.ToLowerInvariant() : "";
+                        string objName = r.gameObject.name.ToLowerInvariant();
+                        if (matName.Contains("glass") || objName.Contains("glass") || objName.Contains("window") || (objName.Contains("cab.001") && matName.Contains("glass")))
+                        {
+                            mats[m] = matGlass;
+                        }
+                        else if (matName.Contains("body") || matName.Contains("engine") || matName.Contains("yellow") || objName.Contains("cab") || objName.Contains("engine") || objName.Contains("boom") || objName.Contains("arm"))
+                        {
+                            mats[m] = matYellow;
+                        }
+                        else
+                        {
+                            mats[m] = matDarkMetal;
+                        }
+                    }
+                    r.sharedMaterials = mats;
+                }
+
+                BoxCollider underColReal = excReal.AddComponent<BoxCollider>();
+                underColReal.size = new Vector3(1.7f, 0.55f, 2.6f);
+                underColReal.center = new Vector3(0f, 0.28f, 0f);
+
+                Transform turret = FindChildDeep(excReal.transform, "TurnAxis");
+                Transform boom = FindChildDeep(excReal.transform, "BoomAxis");
+                Transform stick = FindChildDeep(excReal.transform, "ArmAxis");
+                Transform bucket = FindChildDeep(excReal.transform, "BucketAxis");
+
+                if (bucket != null)
+                {
+                    PhysicsMaterial bucketPhysMat = new PhysicsMaterial("BucketScoopPhysMat")
+                    {
+                        dynamicFriction = 0.15f,
+                        staticFriction = 0.25f,
+                        bounciness = 0.0f
+                    };
+                    BoxCollider btmCol = bucket.gameObject.AddComponent<BoxCollider>();
+                    btmCol.center = new Vector3(0f, -0.25f, 0.20f);
+                    btmCol.size = new Vector3(0.9f, 0.08f, 0.65f);
+                    btmCol.sharedMaterial = bucketPhysMat;
+
+                    BoxCollider backCol = bucket.gameObject.AddComponent<BoxCollider>();
+                    backCol.center = new Vector3(0f, -0.05f, -0.15f);
+                    backCol.size = new Vector3(0.9f, 0.40f, 0.08f);
+                    backCol.sharedMaterial = bucketPhysMat;
+                }
+
+                GameObject camObj = new GameObject("Excavator_Camera");
+                camObj.transform.SetParent(excReal.transform, false);
+                camObj.transform.localPosition = new Vector3(-2.4f, 3.8f, -4.6f);
+                camObj.transform.localRotation = Quaternion.Euler(18f, 15f, 0f);
+                Camera cam = camObj.AddComponent<Camera>();
+                cam.enabled = false;
+
+                GameObject exitObj = new GameObject("Exit_Point");
+                exitObj.transform.SetParent(excReal.transform, false);
+                exitObj.transform.localPosition = new Vector3(-2.8f, 0f, 0.5f);
+
+                ExcavatorController ec = excReal.AddComponent<ExcavatorController>();
+                ec.isFbxRig = true;
+                ec.turret = turret;
+                ec.boom = boom;
+                ec.stick = stick;
+                ec.bucket = bucket;
+                ec.chassisCollider = underColReal;
+                ec.vehicleCamera = cam;
+                ec.exitTransform = exitObj.transform;
+
+                ec.boomCylinderLeft = FindChildDeep(excReal.transform, "BoomCylinderLeftAxis1");
+                ec.boomCylinderLeftTarget = FindChildDeep(excReal.transform, "BoomCylinderLeft1Target");
+                ec.boomCylinderRight = FindChildDeep(excReal.transform, "BoomCylinderRightAxis1");
+                ec.boomCylinderRightTarget = FindChildDeep(excReal.transform, "BoomCylinderRight1Target");
+                ec.armCylinder = FindChildDeep(excReal.transform, "ArmCylinderAxis1");
+                ec.armCylinderTarget = FindChildDeep(excReal.transform, "ArmCylinder1Target");
+                ec.bucketCylinder = FindChildDeep(excReal.transform, "BucketCylinderAxis1");
+                ec.bucketCylinderTarget = FindChildDeep(excReal.transform, "BucketCylinder1Target");
+
+                ec.currentTurretYaw = 0f;
+                ec.currentBoomAngle = -15f;
+                ec.currentStickAngle = 25f;
+                ec.currentBucketAngle = 10f;
+                return;
+            }
+
+            BuildProceduralExcavator(root);
+        }
+
+        private void BuildProceduralExcavator(Transform root)
         {
             GameObject exc = new GameObject("Excavator");
             exc.transform.SetParent(root, false);
