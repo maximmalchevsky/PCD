@@ -62,6 +62,8 @@ namespace Task12_16
         private GameObject prefabWheelTractorBack;
         private GameObject prefabWheelTruck;
         private GameObject prefabElectricityPole;
+        private Mesh sharedClayBrickMesh;
+        private Mesh sharedConcreteBlockMesh;
 
         void Awake()
         {
@@ -211,6 +213,8 @@ namespace Task12_16
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", color);
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smoothness);
             if (m.HasProperty("_Metallic")) m.SetFloat("_Metallic", metallic);
+            if (m.HasProperty("_Cull")) m.SetFloat("_Cull", 0f); // 0 = Off (Two-Sided)
+            m.doubleSidedGI = true;
             return m;
         }
 
@@ -645,7 +649,11 @@ namespace Task12_16
             brick.transform.localRotation = localRot;
 
             MeshFilter mf = brick.AddComponent<MeshFilter>();
-            mf.sharedMesh = ConstructionMeshFactory.CreateClayBrickMesh();
+            if (sharedClayBrickMesh == null)
+            {
+                sharedClayBrickMesh = ConstructionMeshFactory.LoadResourceMesh("brick-gost") ?? ConstructionMeshFactory.CreateClayBrickMesh();
+            }
+            mf.sharedMesh = sharedClayBrickMesh;
 
             MeshRenderer mr = brick.AddComponent<MeshRenderer>();
             mr.sharedMaterial = matBrick;
@@ -686,7 +694,11 @@ namespace Task12_16
             block.transform.localRotation = localRot;
 
             MeshFilter mf = block.AddComponent<MeshFilter>();
-            mf.sharedMesh = ConstructionMeshFactory.CreateConcreteBlockFBSMesh();
+            if (sharedConcreteBlockMesh == null)
+            {
+                sharedConcreteBlockMesh = ConstructionMeshFactory.LoadResourceMesh("block-fbs") ?? ConstructionMeshFactory.CreateConcreteBlockFBSMesh();
+            }
+            mf.sharedMesh = sharedConcreteBlockMesh;
 
             MeshRenderer mr = block.AddComponent<MeshRenderer>();
             mr.sharedMaterial = matConcrete;
@@ -719,20 +731,43 @@ namespace Task12_16
             return block;
         }
 
+        private static readonly string[] stoneModelNames = new string[]
+        {
+            "rock_smallA", "rock_smallB", "rock_smallC", "stone_smallA", "stone_smallB", "rock_largeA", "stone_largeA"
+        };
+
         private GameObject CreateSoilChunk(string name, Transform parent, Vector3 localPos, Quaternion localRot, int seed, float size = 0.46f)
         {
-            GameObject chunk = new GameObject(name);
-            chunk.transform.SetParent(parent, false);
-            chunk.transform.localPosition = localPos;
-            chunk.transform.localRotation = localRot;
+            GameObject chunk = null;
+            string modelName = stoneModelNames[Mathf.Abs(seed) % stoneModelNames.Length];
+            GameObject prefab = Resources.Load<GameObject>(modelName);
 
-            MeshFilter mf = chunk.AddComponent<MeshFilter>();
-            mf.sharedMesh = ConstructionMeshFactory.CreateSoilChunkMesh(seed, size);
+            if (prefab != null)
+            {
+                chunk = Instantiate(prefab, parent);
+                chunk.name = name;
+                chunk.transform.localPosition = localPos;
+                chunk.transform.localRotation = localRot;
+                chunk.transform.localScale = Vector3.one * (size * 1.8f);
+                StripColliders(chunk);
+                ApplyMaterialRecursively(chunk, matDirt);
+            }
+            else
+            {
+                chunk = new GameObject(name);
+                chunk.transform.SetParent(parent, false);
+                chunk.transform.localPosition = localPos;
+                chunk.transform.localRotation = localRot;
 
-            MeshRenderer mr = chunk.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = matDirt;
+                MeshFilter mf = chunk.AddComponent<MeshFilter>();
+                mf.sharedMesh = ConstructionMeshFactory.CreateSoilChunkMesh(seed, size);
 
-            MeshCollider mc = chunk.AddComponent<MeshCollider>();
+                MeshRenderer mr = chunk.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = matDirt;
+            }
+
+            MeshCollider mc = chunk.GetComponentInChildren<MeshCollider>();
+            if (mc == null) mc = chunk.AddComponent<MeshCollider>();
             mc.convex = true;
 
             PhysicsMaterial physMat = new PhysicsMaterial("SoilChunkPhysMat")
@@ -743,17 +778,20 @@ namespace Task12_16
             };
             mc.sharedMaterial = physMat;
 
-            Rigidbody rb = chunk.AddComponent<Rigidbody>();
+            Rigidbody rb = chunk.GetComponent<Rigidbody>();
+            if (rb == null) rb = chunk.AddComponent<Rigidbody>();
             rb.mass = 2.2f;
             rb.linearDamping = 1.3f;
             rb.angularDamping = 2.5f;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            GranularItem gi = chunk.AddComponent<GranularItem>();
+            GranularItem gi = chunk.GetComponent<GranularItem>();
+            if (gi == null) gi = chunk.AddComponent<GranularItem>();
             gi.itemType = GranularItem.GranularType.Sand;
 
-            PickupableItem pi = chunk.AddComponent<PickupableItem>();
+            PickupableItem pi = chunk.GetComponent<PickupableItem>();
+            if (pi == null) pi = chunk.AddComponent<PickupableItem>();
             pi.itemName = "Ком природного грунта";
             pi.rb = rb;
 
@@ -762,18 +800,36 @@ namespace Task12_16
 
         private GameObject CreateQuarryStone(string name, Transform parent, Vector3 localPos, Quaternion localRot, int seed, float size = 0.62f)
         {
-            GameObject stone = new GameObject(name);
-            stone.transform.SetParent(parent, false);
-            stone.transform.localPosition = localPos;
-            stone.transform.localRotation = localRot;
+            GameObject stone = null;
+            string modelName = stoneModelNames[Mathf.Abs(seed + 3) % stoneModelNames.Length];
+            GameObject prefab = Resources.Load<GameObject>(modelName);
 
-            MeshFilter mf = stone.AddComponent<MeshFilter>();
-            mf.sharedMesh = ConstructionMeshFactory.CreateQuarryStoneMesh(seed, size);
+            if (prefab != null)
+            {
+                stone = Instantiate(prefab, parent);
+                stone.name = name;
+                stone.transform.localPosition = localPos;
+                stone.transform.localRotation = localRot;
+                stone.transform.localScale = Vector3.one * (size * 2.2f);
+                StripColliders(stone);
+                ApplyMaterialRecursively(stone, matRock);
+            }
+            else
+            {
+                stone = new GameObject(name);
+                stone.transform.SetParent(parent, false);
+                stone.transform.localPosition = localPos;
+                stone.transform.localRotation = localRot;
 
-            MeshRenderer mr = stone.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = matRock;
+                MeshFilter mf = stone.AddComponent<MeshFilter>();
+                mf.sharedMesh = ConstructionMeshFactory.CreateQuarryStoneMesh(seed, size);
 
-            MeshCollider mc = stone.AddComponent<MeshCollider>();
+                MeshRenderer mr = stone.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = matRock;
+            }
+
+            MeshCollider mc = stone.GetComponentInChildren<MeshCollider>();
+            if (mc == null) mc = stone.AddComponent<MeshCollider>();
             mc.convex = true;
 
             PhysicsMaterial physMat = new PhysicsMaterial("QuarryStonePhysMat")
@@ -784,17 +840,20 @@ namespace Task12_16
             };
             mc.sharedMaterial = physMat;
 
-            Rigidbody rb = stone.AddComponent<Rigidbody>();
+            Rigidbody rb = stone.GetComponent<Rigidbody>();
+            if (rb == null) rb = stone.AddComponent<Rigidbody>();
             rb.mass = 5.2f;
             rb.linearDamping = 1.2f;
             rb.angularDamping = 2.2f;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            GranularItem gi = stone.AddComponent<GranularItem>();
+            GranularItem gi = stone.GetComponent<GranularItem>();
+            if (gi == null) gi = stone.AddComponent<GranularItem>();
             gi.itemType = GranularItem.GranularType.Rock;
 
-            PickupableItem pi = stone.AddComponent<PickupableItem>();
+            PickupableItem pi = stone.GetComponent<PickupableItem>();
+            if (pi == null) pi = stone.AddComponent<PickupableItem>();
             pi.itemName = "Дробленый скальный камень";
             pi.rb = rb;
 
@@ -1808,15 +1867,47 @@ namespace Task12_16
         {
             List<Collider> chassisCols = new List<Collider>();
 
-            // Find root BoxColliders on Excavator, Bulldozer, Dump Truck
+            // Find all chassis / track colliders on Excavator (except bucket scoop)
             Transform exc = root.Find("Excavator");
-            if (exc != null) { Collider c = exc.GetComponent<BoxCollider>(); if (c != null) chassisCols.Add(c); }
+            if (exc != null)
+            {
+                Collider[] cols = exc.GetComponentsInChildren<Collider>();
+                Transform bucket = exc.Find("Turret/Boom_Pivot/Stick_Pivot/Bucket_Pivot");
+                for (int i = 0; i < cols.Length; i++)
+                {
+                    if (cols[i] == null) continue;
+                    if (bucket != null && cols[i].transform.IsChildOf(bucket)) continue;
+                    chassisCols.Add(cols[i]);
+                }
+            }
 
+            // Find chassis colliders on Bulldozer (except blade so blade pushes cargo)
             Transform dozer = root.Find("Bulldozer");
-            if (dozer != null) { Collider c = dozer.GetComponent<BoxCollider>(); if (c != null) chassisCols.Add(c); }
+            if (dozer != null)
+            {
+                Collider[] cols = dozer.GetComponentsInChildren<Collider>();
+                Transform blade = dozer.Find("Bulldozer_Blade_Assembly");
+                for (int i = 0; i < cols.Length; i++)
+                {
+                    if (cols[i] == null) continue;
+                    if (blade != null && cols[i].transform.IsChildOf(blade)) continue;
+                    chassisCols.Add(cols[i]);
+                }
+            }
 
+            // Find chassis colliders on Dump Truck (except bed colliders so bed carries cargo)
             Transform truck = root.Find("Dump_Truck");
-            if (truck != null) { Collider c = truck.GetComponent<BoxCollider>(); if (c != null) chassisCols.Add(c); }
+            if (truck != null)
+            {
+                Collider[] cols = truck.GetComponentsInChildren<Collider>();
+                Transform bed = truck.Find("Dump_Bed_Pivot");
+                for (int i = 0; i < cols.Length; i++)
+                {
+                    if (cols[i] == null) continue;
+                    if (bed != null && cols[i].transform.IsChildOf(bed)) continue;
+                    chassisCols.Add(cols[i]);
+                }
+            }
 
             GranularItem[] items = root.GetComponentsInChildren<GranularItem>();
             for (int i = 0; i < items.Length; i++)

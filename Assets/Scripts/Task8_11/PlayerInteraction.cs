@@ -50,6 +50,7 @@ namespace Task8_11
 
         void Update()
         {
+            if (Task12_16.VehicleBase.GetActiveVehicle() != null) return;
             if (playerCamera == null || !playerCamera.enabled) return;
 
             if (warningTimer > 0f)

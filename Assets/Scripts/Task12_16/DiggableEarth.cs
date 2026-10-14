@@ -299,19 +299,44 @@ namespace Task12_16
             chunkSpawnCounter++;
             int seed = chunkSpawnCounter * 37 + (int)(spawnWorldPos.x * 10f);
 
-            GameObject chunk = new GameObject("Excavated_Soil_Chunk_" + chunkSpawnCounter);
-            chunk.transform.SetParent(cargoRoot, true);
-            chunk.transform.position = spawnWorldPos;
-            chunk.transform.rotation = Random.rotation;
+            string[] models = new string[] { "rock_smallA", "rock_smallB", "rock_smallC", "stone_smallA", "stone_smallB" };
+            string chosenModel = models[Mathf.Abs(seed) % models.Length];
+            GameObject prefab = Resources.Load<GameObject>(chosenModel);
 
-            MeshFilter mf = chunk.AddComponent<MeshFilter>();
+            GameObject chunk = null;
             float chunkSize = Random.Range(0.38f, 0.54f);
-            mf.sharedMesh = ConstructionMeshFactory.CreateSoilChunkMesh(seed, chunkSize);
 
-            MeshRenderer mr = chunk.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = matDirt != null ? matDirt : GetComponent<Renderer>().sharedMaterial;
+            if (prefab != null)
+            {
+                chunk = Instantiate(prefab, cargoRoot);
+                chunk.name = "Excavated_Soil_Chunk_" + chunkSpawnCounter;
+                chunk.transform.position = spawnWorldPos;
+                chunk.transform.rotation = Random.rotation;
+                chunk.transform.localScale = Vector3.one * (chunkSize * 1.8f);
 
-            MeshCollider mc = chunk.AddComponent<MeshCollider>();
+                Collider[] oldCols = chunk.GetComponentsInChildren<Collider>(true);
+                for (int i = 0; i < oldCols.Length; i++) Destroy(oldCols[i]);
+
+                Renderer[] rends = chunk.GetComponentsInChildren<Renderer>(true);
+                Material dMat = matDirt != null ? matDirt : GetComponent<Renderer>().sharedMaterial;
+                for (int i = 0; i < rends.Length; i++) rends[i].sharedMaterial = dMat;
+            }
+            else
+            {
+                chunk = new GameObject("Excavated_Soil_Chunk_" + chunkSpawnCounter);
+                chunk.transform.SetParent(cargoRoot, true);
+                chunk.transform.position = spawnWorldPos;
+                chunk.transform.rotation = Random.rotation;
+
+                MeshFilter mf = chunk.AddComponent<MeshFilter>();
+                mf.sharedMesh = ConstructionMeshFactory.CreateSoilChunkMesh(seed, chunkSize);
+
+                MeshRenderer mr = chunk.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = matDirt != null ? matDirt : GetComponent<Renderer>().sharedMaterial;
+            }
+
+            MeshCollider mc = chunk.GetComponentInChildren<MeshCollider>();
+            if (mc == null) mc = chunk.AddComponent<MeshCollider>();
             mc.convex = true;
 
             PhysicsMaterial soilMat = new PhysicsMaterial("ExcavatedSoilPhysMat")

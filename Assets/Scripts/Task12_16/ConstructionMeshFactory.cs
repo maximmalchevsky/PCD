@@ -59,12 +59,23 @@ namespace Task12_16
                 uvs.Add(new Vector2(1f, 1f));
                 uvs.Add(new Vector2(0f, 1f));
 
+                // 1. Outward Clockwise front faces
                 tris.Add(baseIdx);
-                tris.Add(baseIdx + 1);
+                tris.Add(baseIdx + 3);
                 tris.Add(baseIdx + 2);
+
+                tris.Add(baseIdx);
+                tris.Add(baseIdx + 2);
+                tris.Add(baseIdx + 1);
+
+                // 2. Inward Counter-Clockwise back faces (ensures 100% solid & double-sided geometry)
                 tris.Add(baseIdx);
                 tris.Add(baseIdx + 2);
                 tris.Add(baseIdx + 3);
+
+                tris.Add(baseIdx);
+                tris.Add(baseIdx + 1);
+                tris.Add(baseIdx + 2);
             }
         }
 
@@ -133,6 +144,7 @@ namespace Task12_16
             for (int i = 0; i < segments; i++)
             {
                 int b = sideStart + i * 2;
+                // Outward
                 tris.Add(b);
                 tris.Add(b + 2);
                 tris.Add(b + 1);
@@ -140,6 +152,15 @@ namespace Task12_16
                 tris.Add(b + 1);
                 tris.Add(b + 2);
                 tris.Add(b + 3);
+
+                // Inward (double-sided)
+                tris.Add(b);
+                tris.Add(b + 1);
+                tris.Add(b + 2);
+
+                tris.Add(b + 1);
+                tris.Add(b + 3);
+                tris.Add(b + 2);
             }
 
             // Top Cap
@@ -159,6 +180,12 @@ namespace Task12_16
             }
             for (int i = 0; i < segments; i++)
             {
+                // Outward
+                tris.Add(topCenter);
+                tris.Add(topRing + (i + 1) % segments);
+                tris.Add(topRing + i);
+
+                // Inward
                 tris.Add(topCenter);
                 tris.Add(topRing + i);
                 tris.Add(topRing + (i + 1) % segments);
@@ -181,6 +208,12 @@ namespace Task12_16
             }
             for (int i = 0; i < segments; i++)
             {
+                // Outward
+                tris.Add(btmCenter);
+                tris.Add(btmRing + i);
+                tris.Add(btmRing + (i + 1) % segments);
+
+                // Inward
                 tris.Add(btmCenter);
                 tris.Add(btmRing + (i + 1) % segments);
                 tris.Add(btmRing + i);
@@ -218,8 +251,12 @@ namespace Task12_16
                 verts.Add(vc); norms.Add(n); uvs.Add(new Vector2(1, 1));
                 verts.Add(vd); norms.Add(n); uvs.Add(new Vector2(0, 1));
 
+                // Double-sided quad (both outward and inward)
                 tris.Add(baseI); tris.Add(baseI + 1); tris.Add(baseI + 2);
                 tris.Add(baseI); tris.Add(baseI + 2); tris.Add(baseI + 3);
+
+                tris.Add(baseI); tris.Add(baseI + 2); tris.Add(baseI + 1);
+                tris.Add(baseI); tris.Add(baseI + 3); tris.Add(baseI + 2);
             }
 
             void AddTri(int a, int b, int c)
@@ -234,7 +271,9 @@ namespace Task12_16
                 verts.Add(vb); norms.Add(n); uvs.Add(new Vector2(1, 0));
                 verts.Add(vc); norms.Add(n); uvs.Add(new Vector2(0.5f, 1));
 
+                // Double-sided tri (both outward and inward)
                 tris.Add(baseI); tris.Add(baseI + 1); tris.Add(baseI + 2);
+                tris.Add(baseI); tris.Add(baseI + 2); tris.Add(baseI + 1);
             }
 
             // Bottom
@@ -254,9 +293,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorUndercarriageMesh()
         {
-            Mesh res = LoadResourceMesh("excavator-tracks");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -332,9 +368,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorCabMesh()
         {
-            Mesh res = LoadResourceMesh("excavator-cab");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -347,10 +380,21 @@ namespace Task12_16
 
             // --- OPERATOR CABIN (FRONT-LEFT) ---
             Vector3 cabCenter = new Vector3(-0.96f, 1.25f, 0.70f);
-            // Cab lower frame
+            // Cab lower frame & floor pan
             AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(0f, -0.75f, 0f), new Vector3(1.18f, 0.35f, 1.85f), Quaternion.identity);
             // Cab roof plate
             AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(0f, 0.92f, 0.05f), new Vector3(1.24f, 0.10f, 1.95f), Quaternion.identity);
+
+            // Cab Solid Outer Walls (guarantees cab is never empty/hollow!)
+            // 1. Lower Door & Side Steel Skirt (Left side)
+            AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(-0.55f, -0.32f, 0.05f), new Vector3(0.06f, 0.55f, 1.75f), Quaternion.identity);
+            // 2. Rear Bulkhead Wall (behind operator)
+            AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(0f, 0.10f, -0.85f), new Vector3(1.15f, 1.55f, 0.06f), Quaternion.identity);
+            // 3. Right Partition Wall (separating operator from engine housing)
+            AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(0.55f, 0.10f, 0.05f), new Vector3(0.06f, 1.55f, 1.75f), Quaternion.identity);
+            // 4. Front Lower Cowl & Dash Wall (under windshield)
+            AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(0f, -0.30f, 0.90f), new Vector3(1.15f, 0.58f, 0.06f), Quaternion.identity);
+
             // Cab ROPS A-pillars (front corners)
             AddBox(verts, norms, uvs, tris, cabCenter + new Vector3(-0.55f, 0.10f, 0.90f), new Vector3(0.08f, 1.6f, 0.08f), Quaternion.identity);
             AddBox(verts, norms, uvs, tris, cabCenter + new Vector3( 0.55f, 0.10f, 0.90f), new Vector3(0.08f, 1.6f, 0.08f), Quaternion.identity);
@@ -432,9 +476,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorBoomMesh()
         {
-            Mesh res = LoadResourceMesh("excavator-boom");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -482,9 +523,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorStickMesh()
         {
-            Mesh res = LoadResourceMesh("excavator-stick");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -526,9 +564,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateExcavatorBucketMesh()
         {
-            Mesh res = LoadResourceMesh("excavator-bucket");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -589,9 +624,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateClayBrickMesh()
         {
-            Mesh res = LoadResourceMesh("brick-gost");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -602,14 +634,8 @@ namespace Task12_16
             float ly = 0.22f;
             float lz = 0.28f;
 
-            // Main body
+            // Solid double-sided main body
             AddBox(verts, norms, uvs, tris, Vector3.zero, new Vector3(lx, ly, lz), Quaternion.identity);
-
-            // Mortar frog depression on top face (+Y)
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, ly * 0.5f - 0.012f, 0f), new Vector3(lx * 0.72f, 0.024f, lz * 0.60f), Quaternion.identity);
-
-            // Mortar frog depression on bottom face (-Y)
-            AddBox(verts, norms, uvs, tris, new Vector3(0f, -ly * 0.5f + 0.012f, 0f), new Vector3(lx * 0.72f, 0.024f, lz * 0.60f), Quaternion.identity);
 
             Mesh mesh = new Mesh();
             mesh.name = "Mesh_Clay_Brick";
@@ -626,9 +652,6 @@ namespace Task12_16
         // =========================================================================
         public static Mesh CreateConcreteBlockFBSMesh()
         {
-            Mesh res = LoadResourceMesh("block-fbs");
-            if (res != null) return res;
-
             List<Vector3> verts = new List<Vector3>();
             List<Vector3> norms = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
@@ -638,23 +661,19 @@ namespace Task12_16
             float ly = 0.46f;
             float lz = 0.44f;
 
-            // Solid main block body
+            // Solid double-sided main block body
             AddBox(verts, norms, uvs, tris, Vector3.zero, new Vector3(lx, ly, lz), Quaternion.identity);
-
-            // Interlocking end vertical mortar grooves (Left & Right ends)
-            AddBox(verts, norms, uvs, tris, new Vector3(-lx * 0.5f + 0.02f, 0f, 0f), new Vector3(0.04f, ly * 0.85f, 0.16f), Quaternion.identity);
-            AddBox(verts, norms, uvs, tris, new Vector3( lx * 0.5f - 0.02f, 0f, 0f), new Vector3(0.04f, ly * 0.85f, 0.16f), Quaternion.identity);
 
             // Steel rebar lifting loops (монтажные петли) on top face
             float[] loopX = new float[] { -0.28f, 0.28f };
             for (int l = 0; l < 2; l++)
             {
-                Vector3 loopPos = new Vector3(loopX[l], ly * 0.5f + 0.06f, 0f);
+                Vector3 loopPos = new Vector3(loopX[l], ly * 0.5f + 0.05f, 0f);
                 // Loop posts
-                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(-0.04f, -0.02f, 0f), 0.016f, 0.12f, 8, Quaternion.identity);
-                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3( 0.04f, -0.02f, 0f), 0.016f, 0.12f, 8, Quaternion.identity);
+                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(-0.035f, -0.02f, 0f), 0.014f, 0.10f, 8, Quaternion.identity);
+                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3( 0.035f, -0.02f, 0f), 0.014f, 0.10f, 8, Quaternion.identity);
                 // Loop arch
-                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(0f, 0.04f, 0f), 0.016f, 0.08f, 8, Quaternion.Euler(0f, 0f, 90f));
+                AddCylinder(verts, norms, uvs, tris, loopPos + new Vector3(0f, 0.035f, 0f), 0.014f, 0.07f, 8, Quaternion.Euler(0f, 0f, 90f));
             }
 
             Mesh mesh = new Mesh();
@@ -726,9 +745,14 @@ namespace Task12_16
                 verts.Add(v1); norms.Add(fn); uvs.Add(new Vector2(1f, 0f));
                 verts.Add(v2); norms.Add(fn); uvs.Add(new Vector2(0.5f, 1f));
 
+                // Double-sided facet (both outward and inward)
                 tris.Add(baseI);
                 tris.Add(baseI + 1);
                 tris.Add(baseI + 2);
+
+                tris.Add(baseI);
+                tris.Add(baseI + 2);
+                tris.Add(baseI + 1);
             }
 
             Random.state = oldState;
@@ -794,7 +818,9 @@ namespace Task12_16
                 verts.Add(vb); norms.Add(fn); uvs.Add(new Vector2(1, 0));
                 verts.Add(vc); norms.Add(fn); uvs.Add(new Vector2(0.5f, 1));
 
+                // Double-sided rock facet
                 tris.Add(baseI); tris.Add(baseI + 1); tris.Add(baseI + 2);
+                tris.Add(baseI); tris.Add(baseI + 2); tris.Add(baseI + 1);
             }
 
             // Top facets

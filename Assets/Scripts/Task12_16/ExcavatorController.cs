@@ -23,17 +23,19 @@ namespace Task12_16
         public float currentStickAngle = 25f;
         public float currentBucketAngle = 10f;
 
-        // Smooth Mouse Orbit Camera
+        // Smooth Mouse Orbit Camera & Cab View
         public float cameraDistance = 7.5f;
         public float minCameraDistance = 3.5f;
         public float maxCameraDistance = 16f;
         public float cameraYaw = 35f;
         public float cameraPitch = 22f;
         public float mouseSensitivity = 2.8f;
+        public bool isCabView = false;
 
         private Rigidbody rb;
         private int totalExcavatedChunks = 0;
         private float digDustCooldown = 0f;
+        private float ignoreCollisionTimer = 0f;
 
         // Bucket tooth probe points in local bucket space
         private readonly float[] toothXOffsets = new float[] { -0.60f, -0.30f, 0f, 0.30f, 0.60f };
@@ -52,8 +54,9 @@ namespace Task12_16
                 rb.linearDamping = 1.8f;
                 rb.angularDamping = 3.5f;
                 rb.centerOfMass = new Vector3(0f, -0.4f, 0f);
-                rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-                rb.isKinematic = true;
+                // Freeze X/Z tilt AND freeze Y so blocks cannot lift or flip the excavator!
+                rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
+                rb.isKinematic = false;
             }
 
             if (chassisCollider == null) chassisCollider = GetComponent<Collider>();
@@ -72,23 +75,40 @@ namespace Task12_16
             cameraYaw = transform.eulerAngles.y + currentTurretYaw + 30f;
             cameraPitch = 22f;
             cameraDistance = 7.5f;
+            isCabView = false;
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
 
             IgnoreCargoCollisions();
         }
 
+        public override void ExitVehicle()
+        {
+            base.ExitVehicle();
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
         public void IgnoreCargoCollisions()
         {
-            if (chassisCollider == null) chassisCollider = GetComponent<Collider>();
-            if (chassisCollider == null) return;
-
+            Collider[] vehicleCols = GetComponentsInChildren<Collider>();
             var items = Object.FindObjectsByType<GranularItem>(FindObjectsInactive.Exclude);
+
             for (int i = 0; i < items.Length; i++)
             {
                 if (items[i] == null) continue;
-                Collider col = items[i].GetComponent<Collider>();
-                if (col != null)
+                Collider itemCol = items[i].GetComponent<Collider>();
+                if (itemCol == null) continue;
+
+                for (int v = 0; v < vehicleCols.Length; v++)
                 {
-                    Physics.IgnoreCollision(chassisCollider, col, true);
+                    Collider vc = vehicleCols[v];
+                    if (vc == null) continue;
+                    // Keep bucket colliders active so bucket can scoop cargo!
+                    if (bucket != null && vc.transform.IsChildOf(bucket)) continue;
+
+                    Physics.IgnoreCollision(vc, itemCol, true);
                 }
             }
         }
@@ -97,42 +117,44 @@ namespace Task12_16
         {
             base.Update();
 
-            if (!isPlayerInside)
+            if (!isPlayerInside) return;
+
+            // Periodically ignore collision with newly excavated or dropped cargo
+            ignoreCollisionTimer += Time.deltaTime;
+            if (ignoreCollisionTimer > 1.2f)
             {
-                if (transform.position.y > 0.35f)
-                {
-                    transform.position = new Vector3(transform.position.x, 0.22f, transform.position.z);
-                    if (rb != null)
-                    {
-                        rb.linearVelocity = Vector3.zero;
-                        rb.angularVelocity = Vector3.zero;
-                    }
-                }
-                return;
+                ignoreCollisionTimer = 0f;
+                IgnoreCargoCollisions();
             }
 
-            // 1. Turret rotation (Q / E)
+            // View toggle (V key): Third-person orbit <-> First-person cabin view
+            if (Input.GetKeyDown(KeyCode.V))
+            {
+                isCabView = !isCabView;
+            }
+
+            // 1. Turret rotation (Q / E or Left / Right Arrows)
             float yawInput = 0f;
-            if (Input.GetKey(KeyCode.Q)) yawInput -= 1f;
-            if (Input.GetKey(KeyCode.E)) yawInput += 1f;
+            if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.LeftArrow)) yawInput -= 1f;
+            if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.RightArrow)) yawInput += 1f;
             currentTurretYaw += yawInput * turretSpeed * Time.deltaTime;
 
-            // 2. Boom elevation (R: Up / F: Down into ground)
+            // 2. Boom elevation (R / F or Up / Down Arrows)
             float boomInput = 0f;
-            if (Input.GetKey(KeyCode.R)) boomInput += 1f;
-            if (Input.GetKey(KeyCode.F)) boomInput -= 1f;
+            if (Input.GetKey(KeyCode.R) || Input.GetKey(KeyCode.UpArrow)) boomInput += 1f;
+            if (Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.DownArrow)) boomInput -= 1f;
             currentBoomAngle = Mathf.Clamp(currentBoomAngle + boomInput * boomSpeed * Time.deltaTime, -58f, 22f);
 
-            // 3. Stick arm (T: Reach out / G: Pull in)
+            // 3. Stick arm (T / G or I / K)
             float stickInput = 0f;
-            if (Input.GetKey(KeyCode.T)) stickInput += 1f;
-            if (Input.GetKey(KeyCode.G)) stickInput -= 1f;
+            if (Input.GetKey(KeyCode.T) || Input.GetKey(KeyCode.I)) stickInput += 1f;
+            if (Input.GetKey(KeyCode.G) || Input.GetKey(KeyCode.K)) stickInput -= 1f;
             currentStickAngle = Mathf.Clamp(currentStickAngle + stickInput * stickSpeed * Time.deltaTime, 5f, 118f);
 
-            // 4. Bucket tilt (Space: Curl/Scoop / C: Dump out)
+            // 4. Bucket tilt (Space / C or J / L)
             float bucketInput = 0f;
-            if (Input.GetKey(KeyCode.Space)) bucketInput += 1f;
-            if (Input.GetKey(KeyCode.C)) bucketInput -= 1f;
+            if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.J)) bucketInput += 1f;
+            if (Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.L)) bucketInput -= 1f;
             currentBucketAngle = Mathf.Clamp(currentBucketAngle + bucketInput * bucketSpeed * Time.deltaTime, -52f, 88f);
 
             if (turret != null) turret.localRotation = Quaternion.Euler(0f, currentTurretYaw, 0f);
@@ -149,29 +171,47 @@ namespace Task12_16
         {
             if (!isPlayerInside || vehicleCamera == null) return;
 
-            // Smooth Mouse Orbit Camera
             float mouseX = Input.GetAxis("Mouse X");
             float mouseY = Input.GetAxis("Mouse Y");
             float scroll = Input.GetAxis("Mouse ScrollWheel");
 
-            cameraYaw += mouseX * mouseSensitivity * 45f * Time.deltaTime;
-            cameraPitch -= mouseY * mouseSensitivity * 45f * Time.deltaTime;
-            cameraPitch = Mathf.Clamp(cameraPitch, -2f, 75f);
-
-            if (Mathf.Abs(scroll) > 0.001f)
+            if (isCabView)
             {
-                cameraDistance = Mathf.Clamp(cameraDistance - scroll * 5.0f, minCameraDistance, maxCameraDistance);
+                // First-Person Operator Cabin View (Inside Cab at eye level)
+                Vector3 cabEyePos = (turret != null)
+                    ? turret.TransformPoint(new Vector3(-0.96f, 1.45f, 0.70f))
+                    : transform.TransformPoint(new Vector3(-0.96f, 2.25f, 0.70f));
+
+                cameraYaw += mouseX * mouseSensitivity * 40f * Time.deltaTime;
+                cameraPitch -= mouseY * mouseSensitivity * 40f * Time.deltaTime;
+                cameraPitch = Mathf.Clamp(cameraPitch, -35f, 50f);
+
+                vehicleCamera.transform.position = cabEyePos;
+                float turretBaseYaw = (turret != null) ? turret.eulerAngles.y : transform.eulerAngles.y;
+                vehicleCamera.transform.rotation = Quaternion.Euler(cameraPitch, cameraYaw, 0f);
             }
+            else
+            {
+                // Third-Person Smooth Mouse Orbit Camera
+                cameraYaw += mouseX * mouseSensitivity * 45f * Time.deltaTime;
+                cameraPitch -= mouseY * mouseSensitivity * 45f * Time.deltaTime;
+                cameraPitch = Mathf.Clamp(cameraPitch, -2f, 75f);
 
-            Vector3 focusPoint = (turret != null) ? turret.position + Vector3.up * 1.5f : transform.position + Vector3.up * 2.2f;
-            Quaternion camRot = Quaternion.Euler(cameraPitch, cameraYaw, 0f);
-            Vector3 targetCamPos = focusPoint - camRot * Vector3.forward * cameraDistance;
+                if (Mathf.Abs(scroll) > 0.001f)
+                {
+                    cameraDistance = Mathf.Clamp(cameraDistance - scroll * 5.0f, minCameraDistance, maxCameraDistance);
+                }
 
-            // Ground clamp so camera never clips below soil
-            if (targetCamPos.y < 0.65f) targetCamPos.y = 0.65f;
+                Vector3 focusPoint = (turret != null) ? turret.position + Vector3.up * 1.5f : transform.position + Vector3.up * 2.2f;
+                Quaternion camRot = Quaternion.Euler(cameraPitch, cameraYaw, 0f);
+                Vector3 targetCamPos = focusPoint - camRot * Vector3.forward * cameraDistance;
 
-            vehicleCamera.transform.position = Vector3.Lerp(vehicleCamera.transform.position, targetCamPos, Time.deltaTime * 20f);
-            vehicleCamera.transform.rotation = Quaternion.LookRotation(focusPoint - vehicleCamera.transform.position);
+                // Ground clamp so camera never clips into dirt or trenches
+                if (targetCamPos.y < 0.65f) targetCamPos.y = 0.65f;
+
+                vehicleCamera.transform.position = Vector3.Lerp(vehicleCamera.transform.position, targetCamPos, Time.deltaTime * 20f);
+                vehicleCamera.transform.rotation = Quaternion.LookRotation(focusPoint - vehicleCamera.transform.position);
+            }
         }
 
         private void UpdateGroundDigging(float boomInput, float stickInput, float bucketInput)
@@ -263,22 +303,15 @@ namespace Task12_16
             rb.angularVelocity = new Vector3(0f, rb.angularVelocity.y, 0f);
 
             float vert = 0f;
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) vert += 1f;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) vert -= 1f;
+            if (Input.GetKey(KeyCode.W)) vert += 1f;
+            if (Input.GetKey(KeyCode.S)) vert -= 1f;
 
             float horiz = 0f;
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) horiz -= 1f;
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) horiz += 1f;
-
-            float clampedVy = Mathf.Min(0f, rb.linearVelocity.y);
-            if (transform.position.y > 0.35f)
-            {
-                transform.position = new Vector3(transform.position.x, 0.22f, transform.position.z);
-                clampedVy = 0f;
-            }
+            if (Input.GetKey(KeyCode.A)) horiz -= 1f;
+            if (Input.GetKey(KeyCode.D)) horiz += 1f;
 
             Vector3 moveTarget = transform.forward * (vert * driveSpeed);
-            rb.linearVelocity = new Vector3(moveTarget.x, clampedVy, moveTarget.z);
+            rb.linearVelocity = new Vector3(moveTarget.x, 0f, moveTarget.z);
 
             if (Mathf.Abs(horiz) > 0.01f)
             {
@@ -294,10 +327,11 @@ namespace Task12_16
 
             if (isPlayerInside)
             {
-                string info = "W / S — Движение гусениц вперед / назад  |  A / D — Разворот гусениц\n" +
-                              "Q / E — Вращение башни (360°)  |  R / F — Стрела поднять / опустить\n" +
-                              "T / G — Рукоять вытянуть / подгрести  |  Пробел — Зачерпнуть (копать)  |  C — Высыпать\n" +
-                              "Мышь — Вращать камеру 360°  |  Колесико — Приблизить / отдалить\n" +
+                string viewMode = isCabView ? "[Кабина]" : "[3D Орбита]";
+                string info = "W / S — Гусеницы вперед / назад  |  A / D — Разворот гусениц\n" +
+                              "Q / E (или \u2190 / \u2192) — Поворот башни (360\u00B0)  |  R / F (или \u2191 / \u2193) — Стрела поднять / опустить\n" +
+                              "T / G (или I / K) — Рукоять вытянуть / подгрести  |  Пробел (или J) — Копать  |  C (или L) — Высыпать\n" +
+                              "Мышь — Обзор 360\u00B0  |  V — Вид из кабины / орбита " + viewMode + "  |  Колесико — Zoom\n" +
                               "Выкопано грунта: " + totalExcavatedChunks + " комьев  |  [Esc / X] — Выйти из кабины";
                 DrawVehicleHUD(info);
             }
