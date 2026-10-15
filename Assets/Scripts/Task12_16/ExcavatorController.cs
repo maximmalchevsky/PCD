@@ -19,9 +19,9 @@ namespace Task12_16
         public float steerSpeed = 44f;
 
         public float currentTurretYaw = 0f;
-        public float currentBoomAngle = -42f;
-        public float currentStickAngle = 55f;
-        public float currentBucketAngle = 45f;
+        public float currentBoomAngle = -20f;
+        public float currentStickAngle = 16f;
+        public float currentBucketAngle = 12f;
 
         // Smooth Mouse Orbit Camera & Cab View
         public float cameraDistance = 7.5f;
@@ -74,14 +74,52 @@ namespace Task12_16
                 rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
                 rb.isKinematic = false;
                 rb.useGravity = true;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
             }
 
-            if (turret != null) turretStartRelRot = Quaternion.Inverse(transform.rotation) * turret.rotation;
-            if (boom != null) boomInitialRot = boom.localRotation;
-            if (stick != null) stickInitialRot = stick.localRotation;
-            if (bucket != null) bucketInitialRot = bucket.localRotation;
+            InitializeJoints();
 
-            if (isFbxRig && bucket != null)
+            if (chassisCollider == null) chassisCollider = GetComponent<Collider>();
+            IgnoreCargoCollisions();
+
+            if (DiggableEarth.Instance != null)
+            {
+                Collider earthCol = DiggableEarth.Instance.GetComponent<Collider>();
+                if (earthCol != null)
+                {
+                    Collider[] allCols = GetComponentsInChildren<Collider>(true);
+                    for (int i = 0; i < allCols.Length; i++)
+                    {
+                        if (allCols[i] != chassisCollider)
+                        {
+                            Physics.IgnoreCollision(allCols[i], earthCol, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void InitializeJoints()
+        {
+            if (turret != null && turretStartRelRot == Quaternion.identity)
+            {
+                turretStartRelRot = Quaternion.Inverse(transform.rotation) * turret.rotation;
+            }
+            if (boom != null && boomInitialRot == Quaternion.identity)
+            {
+                boomInitialRot = boom.localRotation;
+            }
+            if (stick != null && stickInitialRot == Quaternion.identity)
+            {
+                stickInitialRot = stick.localRotation;
+            }
+            if (bucket != null && bucketInitialRot == Quaternion.identity)
+            {
+                bucketInitialRot = bucket.localRotation;
+            }
+
+            if (isFbxRig && bucket != null && (fbxTeeth == null || fbxTeeth.Length == 0))
             {
                 var teethList = new System.Collections.Generic.List<Transform>();
                 for (int b = 1; b <= 10; b++)
@@ -92,9 +130,6 @@ namespace Task12_16
                 }
                 if (teethList.Count > 0) fbxTeeth = teethList.ToArray();
             }
-
-            if (chassisCollider == null) chassisCollider = GetComponent<Collider>();
-            IgnoreCargoCollisions();
 
             UpdateJointRotations();
         }
@@ -378,7 +413,7 @@ namespace Task12_16
             rb.linearVelocity = new Vector3(moveTarget.x, rb.linearVelocity.y, moveTarget.z);
 
             // Safety floor boundary: prevent chassis from ever sinking beneath ground slab surface
-            if (transform.position.y < 0.16f)
+            if (transform.position.y < 0.198f)
             {
                 Vector3 p = transform.position;
                 p.y = 0.20f;
